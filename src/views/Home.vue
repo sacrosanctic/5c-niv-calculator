@@ -10,6 +10,18 @@
     </v-row>
     <v-row>
       <v-col>
+        <v-data-table
+        v-if="mb"
+        :headers="headers2"
+        :items="mb"
+        class="elevation-1"
+        dense
+        >
+        </v-data-table>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <p>
           {{mb}}
         </p>
@@ -30,6 +42,19 @@ export default {
     mb: null,
     output: null,
     lookup: [],
+    headers2: [
+      {
+        text: 'amount',
+        value: 'amount',
+        width: '100'
+      },
+      {
+        text: 'name',
+        align: 'left',
+        sortable: false,
+        value: 'name',
+      },
+    ],
   }),
   mounted () {
   },
@@ -50,13 +75,19 @@ export default {
       let temp = this.input.split(/\r?\n/)
       let mb = []
       let promise = []
+      // let obj = {}
       // let sb = []
       for(var i=0;i<temp.length;i++) {
         if(temp[i].match(/sideboard*/gi)) break
-        mb.push([
-          temp[i].substr(0,temp[i].indexOf(' ')),
-          temp[i].substr(temp[i].indexOf(' ')+1)
-        ])
+          mb.push([
+            temp[i].substr(0,temp[i].indexOf(' ')),
+            temp[i].substr(temp[i].indexOf(' ')+1),
+          ])
+        // obj = {
+        //   name: temp[i].substr(temp[i].indexOf(' ')+1),
+        //   amount: temp[i].substr(0,temp[i].indexOf(' ')),
+        // }
+        // mb.push(obj)
         promise.push(this.getCard(temp[i].substr(temp[i].indexOf(' ')+1))
           .then(data => {
             this.lookup.push(data)
@@ -127,10 +158,11 @@ export default {
       this.output = []
       let top = [].concat(card, dork, guild, land, ['other'])
       let bottom = [].concat(cardCount,dorkCount,guildCount,landCount,[otherCount])
+      console.log(bottom)
       for(let j=0;j<top.length;j++) {
         this.output.push([
           top[j],
-          bottom[j]
+          bottom[j],
         ])
       }
       this.output.push(['total',bottom.reduce((a,b)=>a+b,0)])
