@@ -11,11 +11,12 @@
     <v-row>
       <v-col>
         <v-data-table
-        v-if="mb"
-        :headers="headers2"
-        :items="mb"
-        class="elevation-1"
-        dense
+          v-if="mb"
+          :headers="guildHeader"
+          :items="guild"
+          class="elevation-1"
+          dense
+          disable-pagination
         >
         </v-data-table>
       </v-col>
@@ -42,6 +43,17 @@ export default {
     mb: null,
     output: null,
     lookup: [],
+    guild: [],
+    guildHeader: [
+      {
+        text: 'name',
+        value: 'name',
+      },
+      {
+        text: 'value',
+        value: 'value',
+      },
+    ],
     headers2: [
       {
         text: 'amount',
@@ -120,7 +132,7 @@ export default {
       let dorkCount = Array(4).fill(0)
       let cardCount = Array(3).fill(0)
       let landCount = Array(2).fill(0)
-      let otherCount = 0
+      // let otherCount = 0
       let index = null;
       for(const [i, v] of this.mb.entries()) {
         // console.log(v[1])
@@ -128,6 +140,7 @@ export default {
         index = card.findIndex(a=>a==this.lookup[i].name)
         if(index > -1) {
           cardCount[index]+=Number(v[0])
+          if(this.lookup[i].name=="Glittering Wish") guildCount[5]+=Number(v[0])
           continue
         }
         //find dorks
@@ -153,19 +166,29 @@ export default {
           guildCount[index]+=Number(v[0])
           continue
         }
-        otherCount++
+        // otherCount++
       }
-      this.output = []
-      let top = [].concat(card, dork, guild, land, ['other'])
-      let bottom = [].concat(cardCount,dorkCount,guildCount,landCount,[otherCount])
-      console.log(bottom)
-      for(let j=0;j<top.length;j++) {
-        this.output.push([
-          top[j],
-          bottom[j],
-        ])
+      this.guild = []
+      for(let i=0;i<guild.length;i++) {
+
+        let obj = {
+          name: guild[i],
+          value: guildCount[i]
+        }
+        this.guild.push(obj)
       }
-      this.output.push(['total',bottom.reduce((a,b)=>a+b,0)])
+
+      // this.output = []
+      // let top = [].concat(card, dork, guild, land, ['other'])
+      // let bottom = [].concat(cardCount,dorkCount,guildCount,landCount,[otherCount])
+      // console.log(bottom)
+      // for(let j=0;j<top.length;j++) {
+      //   this.output.push([
+      //     top[j],
+      //     bottom[j],
+      //   ])
+      // }
+      // this.output.push(['total',bottom.reduce((a,b)=>a+b,0)])
     }
   }
 }
