@@ -17,6 +17,7 @@
           class="elevation-1"
           dense
           disable-pagination
+          hide-default-footer
         >
         </v-data-table>
       </v-col>
@@ -80,30 +81,53 @@ export default {
     getCard(name) {
       return this.$store.dispatch('getCard', name)
         .then(res => {
-          return res
-        })
+            if(res.exists()) {
+              return JSON.parse(res.val())
+            }
+            else {
+              return this.$axios.get('https://api.scryfall.com/cards/named?fuzzy=' + encodeURI(name))
+                .then(card => {
+                  card = card.data
+                  if(card.layout!='normal') {
+                    card = card.card_faces[0]
+                  }
+                  const obj = this.createCardObj(card)
+                  this.$store.dispatch('cacheCard', obj)
+                  return obj
+                })
+            }
+          })
+    },
+    createCardObj(card) {
+      let obj = {
+        cmc: card.cmc,
+        colors: card.colors.sort().join(''),
+        name: card.name,
+        type_line: card.type_line,
+      }
+
+      return obj
+
     },
     submit() {
       let temp = this.input.split(/\r?\n/)
       let mb = []
       let promise = []
-      // let obj = {}
+      let name = null
+      let amount = null
       // let sb = []
       for(var i=0;i<temp.length;i++) {
         if(temp[i].match(/sideboard*/gi)) break
-          mb.push([
-            temp[i].substr(0,temp[i].indexOf(' ')),
-            temp[i].substr(temp[i].indexOf(' ')+1),
-          ])
-        // obj = {
-        //   name: temp[i].substr(temp[i].indexOf(' ')+1),
-        //   amount: temp[i].substr(0,temp[i].indexOf(' ')),
-        // }
-        // mb.push(obj)
-        promise.push(this.getCard(temp[i].substr(temp[i].indexOf(' ')+1))
+        name = temp[i].substr(temp[i].indexOf(' ')+1)
+        amount = temp[i].substr(0,temp[i].indexOf(' '))
+        mb.push({
+          name: name,
+          amount: amount,
+        })
+        promise.push(this.getCard(name))
           .then(data => {
             this.lookup.push(data)
-          }))
+          })
       }
       this.mb = mb
       Promise.all(promise)
@@ -171,11 +195,10 @@ export default {
       this.guild = []
       for(let i=0;i<guild.length;i++) {
 
-        let obj = {
+        this.guild.push({
           name: guild[i],
           value: guildCount[i]
-        }
-        this.guild.push(obj)
+        })
       }
 
       // this.output = []
