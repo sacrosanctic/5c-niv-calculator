@@ -135,12 +135,35 @@ export default {
       Other: 41,
     },
     goodstuff: [],
+    combination: [],
   }),
   mounted() {
+    this.combinationLoop()
   },
   methods: {
     combinationLoop() {
-      
+      this.findCombinations(19)
+      let i=0
+      for(const item of this.combination) {
+        this.transpose(item)
+        this.result()
+        i++
+        console.log('progress: ' + i)
+        // if(i>500) break
+      }
+    },
+    transpose(array) {
+      this.deck.WU = array[0] ? array[0] : 0
+      this.deck.WB = array[1] ? array[1] : 0
+      this.deck.WR = array[2] ? array[2] : 0
+      this.deck.WG = array[3] ? array[3] : 0
+      this.deck.UB = array[4] ? array[4] : 0
+      this.deck.UR = array[5] ? array[5] : 0
+      this.deck.UG = array[6] ? array[6] : 0
+      this.deck.BR = array[7] ? array[7] : 0
+      this.deck.BG = array[8] ? array[8] : 0
+      this.deck.RG = array[9] ? array[9] : 0
+      this.deck.Other = 59-array.reduce((a,b)=>a+b,0)
     },
     // https://www.geeksforgeeks.org/find-all-combinations-that-adds-upto-given-number-2/
     // this one works, permutation with repeats
@@ -154,7 +177,7 @@ export default {
       if ($reducedNum == 0) {
         let temp = []
         for (let $i = 0; $i < $index; $i++) temp.push($arr[$i])
-        this.goodstuff.push(temp)
+        this.combination.push(temp)
         return
       }
 
@@ -191,27 +214,27 @@ export default {
     result() {
       let temp = {}
       let expected_hits = 0
-      let text = ''
+      // let text = ''
       for (let number_hits = 0; number_hits < 11; number_hits++) {
         const hit_prob = this.determine_hit_prob(number_hits)
-        text = 'Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.'
-        console.log(text)
-        temp[number_hits]=hit_prob
+        // text = 'Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.'
+        // console.log(text)
+        temp[number_hits]=(hit_prob*100).toFixed(1)
         expected_hits += number_hits * hit_prob;
       }
-      text = 'Expected Number of hits: ' + expected_hits
-      console.log(text)
-      temp.average=expected_hits
+      // text = 'Expected Number of hits: ' + expected_hits
+      // console.log(text)
+      temp.average=expected_hits.toFixed(1)
 
       let maxGuild = 0;
       for (const [key, value] of Object.entries(this.deck)) {
         if (key == "Other") continue;
         if (value != 0) maxGuild++;
       }
-      text = 'Hitting '+maxGuild+' cards happen once per ' + (1/this.determine_hit_prob(maxGuild)).toFixed(0) + ' games on average.'
-      console.log(text)
-      temp.maxhit=maxGuild
-      temp.maxhitchance=this.determine_hit_prob(maxGuild)
+      // text = 'Hitting '+maxGuild+' cards happen once per ' + (1/this.determine_hit_prob(maxGuild)).toFixed(0) + ' games on average.'
+      // console.log(text)
+      temp.maxHit=maxGuild
+      temp.maxHitChance=(1/this.determine_hit_prob(maxGuild)).toFixed(0)
       this.goodstuff.push({...this.deck,...temp})
     },
     binom(n, k) {
