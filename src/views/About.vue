@@ -4,7 +4,12 @@
       <v-btn @click="result()">calculate</v-btn>
     </div>
     <p v-html="output"></p>
-    <!-- <textarea name="" id="" cols="30" rows="10" :value="output"></textarea> -->
+    <!-- <textarea name="" id="" cols="100" rows="10" :value="JSON.stringify(output)"></textarea> -->
+    <v-data-table
+    v-if="goodstuff"
+    :headers="headers"
+    :items="goodstuff"
+    ></v-data-table>
   </v-container>
 </template>
 
@@ -13,6 +18,108 @@
 
 export default {
   data: () => ({
+    headers: [
+      {
+        text: 'Guild 1',
+        value: 'WU'
+      },
+      {
+        text: 'Guild 2',
+        value: 'WB'
+      },
+      {
+        text: 'Guild 3',
+        value: 'WR'
+      },
+      {
+        text: 'Guild 4',
+        value: 'WG'
+      },
+      {
+        text: 'Guild 5',
+        value: 'UB'
+      },
+      {
+        text: 'Guild 6',
+        value: 'UR'
+      },
+      {
+        text: 'Guild 7',
+        value: 'UG'
+      },
+      {
+        text: 'Guild 8',
+        value: 'BR'
+      },
+      {
+        text: 'Guild 9',
+        value: 'BG'
+      },
+      {
+        text: 'Guild 10',
+        value: 'RG'
+      },
+      {
+        text: 'Other',
+        value: 'Other'
+      },
+      {
+        text: '0 hit',
+        value: '0'
+      },
+      {
+        text: '1 hit',
+        value: '1'
+      },
+      {
+        text: '2 hit',
+        value: '2'
+      },
+      {
+        text: '3 hit',
+        value: '3'
+      },
+      {
+        text: '4 hit',
+        value: '4'
+      },
+      {
+        text: '5 hit',
+        value: '5'
+      },
+      {
+        text: '6 hit',
+        value: '6'
+      },
+      {
+        text: '7 hit',
+        value: '7'
+      },
+      {
+        text: '8 hit',
+        value: '8'
+      },
+      {
+        text: '9 hit',
+        value: '9'
+      },
+      {
+        text: '10 hit',
+        value: '10'
+      },
+      {
+        text: 'average',
+        value: 'average'
+      },
+      {
+        text: 'max hit',
+        value: 'maxHit'
+      },
+      {
+        text: 'max hit chance',
+        value: 'maxHitChance'
+      },
+    ],
     output: "",
     deck: {
       WU: 4,
@@ -25,162 +132,87 @@ export default {
       BR: 0,
       BG: 1,
       RG: 3,
-      Other: 36
-    }
+      Other: 41,
+    },
+    goodstuff: [],
   }),
   mounted() {
-    this.findCombinations(5)
   },
   methods: {
+    combinationLoop() {
+      
+    },
     // https://www.geeksforgeeks.org/find-all-combinations-that-adds-upto-given-number-2/
+    // this one works, permutation with repeats
+    // this.findCombinations(30)
     findCombinationsUtil($arr, $index, $num, $reducedNum) {
       // Base condition
-      if ($reducedNum < 0) return;
+      if ($reducedNum < 0 || $index > 10) return
 
       // If combination is
       // found, print it
       if ($reducedNum == 0) {
-        for (let $i = 0; $i < $index; $i++) console.log($arr);
+        let temp = []
+        for (let $i = 0; $i < $index; $i++) temp.push($arr[$i])
+        this.goodstuff.push(temp)
         return
       }
 
       // Find the previous number
       // stored in arr[] It helps
       // in maintaining increasing order
-      const $prev = $index == 0 ? 1 : $arr[$index - 1];
+      const $prev = $index == 0 ? 1 : $arr[$index - 1]
 
       // note loop starts from previous
       // number i.e. at array location
       // index - 1
       for (let $k = $prev; $k <= $num; $k++) {
         // next element of array is k
-        $arr[$index] = $k;
+        $arr[$index] = $k
 
         // call recursively with
         // reduced number
-        this.findCombinationsUtil($arr, $index + 1, $num, $reducedNum - $k);
+        this.findCombinationsUtil($arr, $index + 1, $num, $reducedNum - $k)
       }
     },
 
-    /* Function to find out all  
-combinations of positive numbers  
-that add upto given number. 
-It uses findCombinationsUtil() */
+    /* Function to find out all
+      combinations of positive numbers
+      that add upto given number.
+      It uses findCombinationsUtil() */
     findCombinations($n) {
       // array to store the combinations
       // It can contain max n elements
-      let $arr = [];
+      let $arr = []
 
       //find all combinations
-      this.findCombinationsUtil($arr, 0, $n, $n);
-    },
-    // console.log(this.subsetSum(array, 5))
-    // console.log(this.subsetSum([1,2,6], 5))
-    subsetSum(numbers, target, partial) {
-      var s, n, remaining;
-
-      partial = partial || [];
-
-      // sum partial
-      s = partial.reduce(function(a, b) {
-        return a + b;
-      }, 0);
-
-      // check if the partial sum is equals to target
-      if (s === target && partial.length <= 10) {
-        console.log("%s=%s", partial.join("+"), target);
-      }
-
-      if (s >= target) {
-        return; // if we reach the number why bother to continue
-      }
-
-      for (var i = 0; i < numbers.length; i++) {
-        n = numbers[i];
-        remaining = numbers.slice(i + 1);
-        this.subsetSum(remaining, target, partial.concat([n]));
-      }
-    },
-
-    permutation2() {
-      let array = Array(10).fill(0);
-      array[0] = 30;
-      let loop = 0;
-      for (; loop < 999999; loop++) {
-        console.log(array);
-        this.output += array + "<br/>";
-        if (array[7] == 30) break;
-
-        if (array[0] != 0) {
-          array[0]--;
-          array[1]++;
-        } else {
-          array = this.carryOver2(array, 1);
-        }
-      }
-    },
-    carryOver2(array, index) {
-      if (array[index] == 0) {
-        array = this.carryOver2(array, index + 1);
-      } else {
-        array[index] = 0;
-        array[index + 1]++;
-        array[0] = 0;
-        array[0] = 30 - array.reduce((a, b) => a + b, 0);
-      }
-      return array;
-    },
-    permutation1() {
-      let total = 30;
-      let array = Array(11).fill(0);
-      let loop = 0;
-      for (; loop < 99999; loop++) {
-        array[0]++;
-        if (array[5] == 1) break;
-        array = this.carryOver(array);
-        console.log(array);
-        if (array.reduce((a, b) => a + b, 0) == total)
-          this.output += array + "<br/>";
-      }
-    },
-    carryOver(array) {
-      let index = -1;
-      index = array.findIndex(a => a == 31);
-      if (index != -1) {
-        array[index] = 0;
-        array[index + 1]++;
-        array = this.carryOver(array);
-      }
-      return array;
+      this.findCombinationsUtil($arr, 0, $n, $n)
     },
     result() {
-      let expected_hits = 0;
+      let temp = {}
+      let expected_hits = 0
+      let text = ''
       for (let number_hits = 0; number_hits < 11; number_hits++) {
-        const hit_prob = this.determine_hit_prob(number_hits);
-        // console.log('Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.')
-        this.output +=
-          "Probability of hitting " +
-          number_hits +
-          " cards: " +
-          (hit_prob * 100).toFixed(1) +
-          "%.<br/>";
+        const hit_prob = this.determine_hit_prob(number_hits)
+        text = 'Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.'
+        console.log(text)
+        temp[number_hits]=hit_prob
         expected_hits += number_hits * hit_prob;
       }
-      // console.log('Expected Number of hits: ' + expected_hits.toFixed(2))
-      this.output +=
-        "Expected Number of hits: " + expected_hits.toFixed(2) + "<br/>";
+      text = 'Expected Number of hits: ' + expected_hits
+      console.log(text)
+      temp.average=expected_hits
+
       let maxGuild = 0;
       for (const [key, value] of Object.entries(this.deck)) {
         if (key == "Other") continue;
         if (value != 0) maxGuild++;
       }
-      // console.log('Hitting '+maxGuild+' cards happen once per ' + (1/this.determine_hit_prob(maxGuild)).toFixed(0) + ' games on average.')
-      this.output +=
-        "Hitting " +
-        maxGuild +
-        " cards happen once per " +
-        (1 / this.determine_hit_prob(maxGuild)).toFixed(0) +
-        " games on average.";
+      text = 'Hitting '+maxGuild+' cards happen once per ' + (1/this.determine_hit_prob(maxGuild)).toFixed(0) + ' games on average.'
+      console.log(text)
+      temp.maxhit=maxGuild
+      temp.maxhitchance=this.determine_hit_prob(maxGuild)
+      this.goodstuff.push({...this.deck,...temp})
     },
     binom(n, k) {
       /*
