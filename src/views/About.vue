@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <div>
-      <v-btn @click="result()">calculate</v-btn>
+      <v-btn @click="combinationLoop()">calculate</v-btn>
     </div>
     <p v-html="output"></p>
     <!-- <textarea name="" id="" cols="100" rows="10" :value="JSON.stringify(output)"></textarea> -->
@@ -138,11 +138,10 @@ export default {
     combination: [],
   }),
   mounted() {
-    this.combinationLoop()
   },
   methods: {
     combinationLoop() {
-      this.findCombinations(19)
+      this.findCombinations(20)
       let i=0
       for(const item of this.combination) {
         this.transpose(item)
