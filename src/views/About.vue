@@ -1,10 +1,19 @@
 <template>
   <v-container>
+    <v-row>
+      <v-col>
+        <v-text-field value="amount" v-model="amount"></v-text-field>
+      </v-col>
+      <v-col>
+        <v-btn @click="combinationLoop(amount)">Loop 1</v-btn>
+        <v-btn @click="combinationLoop2(amount)">Loop 2 (cumulative)</v-btn>
+        <v-btn @click="clear()">Clear</v-btn>
+        <v-btn @click="exportCSV()">Export</v-btn>
+      </v-col>
+    </v-row>
     <div>
-      <v-btn @click="result()">calculate</v-btn>
     </div>
     <p v-html="output"></p>
-    <!-- <textarea name="" id="" cols="100" rows="10" :value="JSON.stringify(output)"></textarea> -->
     <v-data-table
     v-if="goodstuff"
     :headers="headers"
@@ -19,6 +28,10 @@
 export default {
   data: () => ({
     headers: [
+      {
+        text: 'Possible hit',
+        value: 'possibleHits'
+      },
       {
         text: 'Guild 1',
         value: 'WU'
@@ -133,22 +146,72 @@ export default {
       BG: 1,
       RG: 3,
       Other: 41,
+      // Total: 18,
     },
+    amount: '',
+    possibleHits: 0,
     goodstuff: [],
     combination: [],
   }),
   mounted() {
-    this.combinationLoop()
   },
   methods: {
-    combinationLoop() {
-      this.findCombinations(19)
+    csvExport(arrData) {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += [
+        Object.keys(arrData[0]).join(";"),
+        ...arrData.map(item => Object.values(item).join(";"))
+      ]
+        .join("\n")
+        .replace(/(^\[)|(\]$)/gm, "");
+
+      const data = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", data);
+      link.setAttribute("download", "export.csv");
+      link.click();
+    },
+    exportCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,"
+      csvContent += [
+        Object.keys(this.goodstuff[0]).join(";"),
+        ...this.goodstuff.map(item => Object.values(item).join(";"))
+      ]
+        .join("\n")
+        .replace(/(^\[)|(\]$)/gm, "");
+
+      const data = encodeURI(csvContent)
+      const link = document.createElement("a")
+      link.setAttribute("href", data)
+      link.setAttribute("download", "export.csv")
+      link.click()
+    },
+    exportJSON() {
+      let contentType = 'text/plain'
+      let file = new Blob([this.goodstuff], {type: contentType})
+      let a = document.createElement("a")
+      a.href = URL.createdObjectURL(file)
+      a.download = 'smile'
+      a.click()
+    },
+    clear() {
+      this.goodstuff = []
+    },
+    combinationLoop2(numHit) {
+      for (let i=1;i<=numHit;i++) {
+        this.combinationLoop(i)
+      }
+    },
+    combinationLoop(numHit) {
+      this.possibleHits = numHit
+      this.combination = []
+      this.findCombinations(numHit)
       let i=0
       for(const item of this.combination) {
         this.transpose(item)
         this.result()
         i++
-        console.log('progress: ' + i)
+        console.log('progress: ' + this.possibleHits + '-' + i)
         // if(i>500) break
       }
     },
@@ -164,6 +227,7 @@ export default {
       this.deck.BG = array[8] ? array[8] : 0
       this.deck.RG = array[9] ? array[9] : 0
       this.deck.Other = 59-array.reduce((a,b)=>a+b,0)
+      // this.deck.Total = numHit
     },
     // https://www.geeksforgeeks.org/find-all-combinations-that-adds-upto-given-number-2/
     // this one works, permutation with repeats
@@ -219,12 +283,12 @@ export default {
         const hit_prob = this.determine_hit_prob(number_hits)
         // text = 'Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.'
         // console.log(text)
-        temp[number_hits]=(hit_prob*100).toFixed(1)
+        temp[number_hits]=(hit_prob*100).toFixed(4)
         expected_hits += number_hits * hit_prob;
       }
       // text = 'Expected Number of hits: ' + expected_hits
       // console.log(text)
-      temp.average=expected_hits.toFixed(1)
+      temp.average=expected_hits.toFixed(4)
 
       let maxGuild = 0;
       for (const [key, value] of Object.entries(this.deck)) {
@@ -235,7 +299,7 @@ export default {
       // console.log(text)
       temp.maxHit=maxGuild
       temp.maxHitChance=(1/this.determine_hit_prob(maxGuild)).toFixed(0)
-      this.goodstuff.push({...this.deck,...temp})
+      this.goodstuff.push({...this.deck,...temp,possibleHits: this.possibleHits})
     },
     binom(n, k) {
       /*
