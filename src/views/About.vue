@@ -9,6 +9,7 @@
         <v-btn @click="combinationLoop2(amount)">Loop 2 (cumulative)</v-btn>
         <v-btn @click="clear()">Clear</v-btn>
         <v-btn @click="exportCSV()">Export</v-btn>
+        <v-btn @click="probabilityLookup()">Probability Lookup</v-btn>
       </v-col>
     </v-row>
     <div>
@@ -77,51 +78,51 @@ export default {
         value: 'Other'
       },
       {
-        text: '0 hit',
+        text: '0 hit (%)',
         value: '0'
       },
       {
-        text: '1 hit',
+        text: '1 hit (%)',
         value: '1'
       },
       {
-        text: '2 hit',
+        text: '2 hit (%)',
         value: '2'
       },
       {
-        text: '3 hit',
+        text: '3 hit (%)',
         value: '3'
       },
       {
-        text: '4 hit',
+        text: '4 hit (%)',
         value: '4'
       },
       {
-        text: '5 hit',
+        text: '5 hit (%)',
         value: '5'
       },
       {
-        text: '6 hit',
+        text: '6 hit (%)',
         value: '6'
       },
       {
-        text: '7 hit',
+        text: '7 hit (%)',
         value: '7'
       },
       {
-        text: '8 hit',
+        text: '8 hit (%)',
         value: '8'
       },
       {
-        text: '9 hit',
+        text: '9 hit (%)',
         value: '9'
       },
       {
-        text: '10 hit',
+        text: '10 hit (%)',
         value: '10'
       },
       {
-        text: 'average',
+        text: 'average hit',
         value: 'average'
       },
       {
@@ -156,20 +157,16 @@ export default {
   mounted() {
   },
   methods: {
-    csvExport(arrData) {
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += [
-        Object.keys(arrData[0]).join(";"),
-        ...arrData.map(item => Object.values(item).join(";"))
-      ]
-        .join("\n")
-        .replace(/(^\[)|(\]$)/gm, "");
-
-      const data = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", data);
-      link.setAttribute("download", "export.csv");
-      link.click();
+    probabilityLookup() {
+      let array = []
+      array = [3,1,3,2,1,3,4,4,0,4]
+      this.possibleHits = array.reduce((a,b)=>a+b,0)
+      this.transpose(array)
+      this.result()
+      array = [4,0,4,4,3,1,2,3,1,3]
+      this.possibleHits = array.reduce((a,b)=>a+b,0)
+      this.transpose(array)
+      this.result()
     },
     exportCSV() {
       let csvContent = "data:text/csv;charset=utf-8,"
@@ -185,14 +182,6 @@ export default {
       link.setAttribute("href", data)
       link.setAttribute("download", "export.csv")
       link.click()
-    },
-    exportJSON() {
-      let contentType = 'text/plain'
-      let file = new Blob([this.goodstuff], {type: contentType})
-      let a = document.createElement("a")
-      a.href = URL.createdObjectURL(file)
-      a.download = 'smile'
-      a.click()
     },
     clear() {
       this.goodstuff = []

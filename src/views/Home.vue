@@ -5,7 +5,7 @@
         <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>
         <v-textarea v-model="input"></v-textarea>
-        <v-btn @click.stop="submit">calculate</v-btn>
+        <v-btn @click.stop="test">calculate</v-btn>
       </v-col>
     </v-row>
     <v-row>
@@ -21,14 +21,29 @@
         >
         </v-data-table>
       </v-col>
+      <v-col>
+        <v-data-table
+          v-if="output"
+          :headers="guildHeader"
+          :items="output"
+          class="elevation-1"
+          dense
+          disable-pagination
+          hide-default-footer
+        >
+        </v-data-table>
+      </v-col>
     </v-row>
     <v-row>
       <v-col>
         <p>
+          {{output}}
+        </p>
+        <p>
           {{mb}}
         </p>
         <p>
-          {{output}}
+          {{sb}}
         </p>
       </v-col>
     </v-row>
@@ -39,10 +54,11 @@
 export default {
   data: () => ({
     input: null,
-    table: null,
-    cardDB: null,
-    mb: null,
     output: null,
+    mb: null,
+    sb: null,
+    cardCache: null,
+    cardLookup: [],
     lookup: [],
     guild: [],
     guildHeader: [
@@ -55,85 +71,82 @@ export default {
         value: 'value',
       },
     ],
-    headers2: [
-      {
-        text: 'amount',
-        value: 'amount',
-        width: '100'
-      },
-      {
-        text: 'name',
-        align: 'left',
-        sortable: false,
-        value: 'name',
-      },
-    ],
   }),
   mounted () {
+    // console.log(this.getCard('Dreadhorde Arcanist'))
   },
   methods: {
-    cacheCard(name) {
-      this.$axios.get('https://api.scryfall.com/cards/named?fuzzy=' + encodeURI(name))
-        .then(res => {
-          this.$store.dispatch('cacheCard', res.data)
+    test() {
+      this.parseInput()
+      this.lookupCards()
+    },
+    parseInput() {
+      let cardList = this.input.split(/\r?\n/)
+      let mb = []
+      let sb = []
+      // let promise = []
+      let sbCheck = false
+      for(let i=0;i<cardList.length;i++) {
+        if(cardList[i].match(/sideboard[:]*/gi)) {
+          sbCheck = true
+          continue
+        }
+        const obj = {
+          name: cardList[i].substr(cardList[i].indexOf(' ')+1),
+          amount: cardList[i].substr(0,cardList[i].indexOf(' '))
+        }
+        sbCheck ? sb.push(obj) : mb.push(obj)
+
+        // promise.push(this.getCard(obj.name))
+        //   .then(data => {
+        //     this.cardLookup.push(data)
+        //   })
+      }
+      this.mb = mb
+      this.sb = sb
+      // Promise.all(promise)
+      //   .then(() => {
+      //     // this.guildTable()
+      //   })
+    },
+    lookupCards() {
+      let promise = []
+      for(const card of this.mb) {
+        promise.push(
+          this.getCard(card.name)
+            .then(data => {
+              this.cardLookup.push(data)
+          })
+        )
+      }
+      Promise.all(promise)
+        .then(() => {
+          this.guildTable()
         })
     },
-    getCard(name) {
-      return this.$store.dispatch('getCard', name)
-        .then(res => {
-            if(res.exists()) {
-              return JSON.parse(res.val())
-            }
-            else {
-              return this.$axios.get('https://api.scryfall.com/cards/named?fuzzy=' + encodeURI(name))
-                .then(card => {
-                  card = card.data
-                  if(card.layout!='normal') {
-                    card = card.card_faces[0]
-                  }
-                  const obj = this.createCardObj(card)
-                  this.$store.dispatch('cacheCard', obj)
-                  return obj
-                })
-            }
-          })
+    async getCard(name) {
+      const result = await this.$store.dispatch('getCard', name)
+      if(result.exists()) {
+        return JSON.parse(result.val())
+      }
+      else {
+        let card = await this.$axios.get('https://api.scryfall.com/cards/named?fuzzy=' + encodeURI(name))
+        card = card.data
+        if(card.layout!='normal') {
+          card = card.card_faces[0]
+        }
+        const obj = this.createCardObj(card)
+        this.$store.dispatch('cacheCard', obj)
+        return obj
+      }
     },
     createCardObj(card) {
-      let obj = {
+      return {
         cmc: card.cmc,
         colors: card.colors.sort().join(''),
         name: card.name,
         type_line: card.type_line,
       }
-
-      return obj
-
-    },
-    submit() {
-      let temp = this.input.split(/\r?\n/)
-      let mb = []
-      let promise = []
-      let name = null
-      let amount = null
-      // let sb = []
-      for(var i=0;i<temp.length;i++) {
-        if(temp[i].match(/sideboard*/gi)) break
-        name = temp[i].substr(temp[i].indexOf(' ')+1)
-        amount = temp[i].substr(0,temp[i].indexOf(' '))
-        mb.push({
-          name: name,
-          amount: amount,
-        })
-        promise.push(this.getCard(name))
-          .then(data => {
-            this.lookup.push(data)
-          })
-      }
-      this.mb = mb
-      Promise.all(promise)
-        .then(() => {
-          this.guildTable()
-        })
     },
     guildTable() {
       const guild = ['BG','BR','BW','BU','GR','GW','GU','RW','RU','UW']
@@ -142,52 +155,54 @@ export default {
         'Gilded Goose',
         'Noble Hierach',
         'Sylvan Caryatid',
+        'Utopia Sprawl',
       ]
-      const card = [
+      const keyCards = [
         'Niv-Mizzet Reborn',
         'Arcum\'s Astrolabe',
         'Glittering Wish',
+
       ]
       const land = [
         'Basic',
         'Land'
       ]
-      let guildCount = Array(10).fill(0)
-      let dorkCount = Array(4).fill(0)
-      let cardCount = Array(3).fill(0)
-      let landCount = Array(2).fill(0)
+      let guildCount = Array(guild.length).fill(0)
+      let dorkCount = Array(dork.length).fill(0)
+      let cardCount = Array(keyCards.length).fill(0)
+      let landCount = Array(land.length).fill(0)
       // let otherCount = 0
       let index = null;
-      for(const [i, v] of this.mb.entries()) {
-        // console.log(v[1])
+      for(const [i, card] of this.mb.entries()) {
+        // console.log(card.name)
         //find cards
-        index = card.findIndex(a=>a==this.lookup[i].name)
+        index = keyCards.findIndex(a=>a==this.cardLookup[i].name)
         if(index > -1) {
-          cardCount[index]+=Number(v[0])
-          if(this.lookup[i].name=="Glittering Wish") guildCount[5]+=Number(v[0])
+          cardCount[index]+=Number(card.amount)
+          if(this.cardLookup[i].name=="Glittering Wish") guildCount[5]+=Number(card.amount)
           continue
         }
         //find dorks
-        index = dork.findIndex(a=>a==this.lookup[i].name)
+        index = dork.findIndex(a=>a==this.cardLookup[i].name)
         if(index > -1) {
-          dorkCount[index]+=Number(v[0])
+          dorkCount[index]+=Number(card.amount)
           continue
         }
         //find basic land
-        index = this.lookup[i].type_line.search(land[0])
+        index = this.cardLookup[i].type_line.search(land[0])
         if(index > -1) {
-          landCount[0]+=Number(v[0])
+          landCount[0]+=Number(card.amount)
           continue
         }
         //find other land
-        index = this.lookup[i].type_line.search(land[1])
+        index = this.cardLookup[i].type_line.search(land[1])
         if(index > -1) {
-          landCount[1]+=Number(v[0])
+          landCount[1]+=Number(card.amount)
           continue
         }
-        index = guild.findIndex(a=>a==this.lookup[i].colors)
+        index = guild.findIndex(a=>a==this.cardLookup[i].colors)
         if(index > -1) {
-          guildCount[index]+=Number(v[0])
+          guildCount[index]+=Number(card.amount)
           continue
         }
         // otherCount++
@@ -200,18 +215,24 @@ export default {
           value: guildCount[i]
         })
       }
+      this.guild.push(
+        Object.fromEntries(land.map((_,i)=>[land[i],landCount[i]]))
+      )
 
-      // this.output = []
-      // let top = [].concat(card, dork, guild, land, ['other'])
-      // let bottom = [].concat(cardCount,dorkCount,guildCount,landCount,[otherCount])
-      // console.log(bottom)
+
+      // this.guild = []
+      // let top = [...keyCards, ...dork, ...guild, ...land, 'other']
+      // let bottom = [...cardCount,...dorkCount,...guildCount,...landCount,otherCount]
       // for(let j=0;j<top.length;j++) {
-      //   this.output.push([
-      //     top[j],
-      //     bottom[j],
-      //   ])
+      //   this.guild.push({
+      //     name: top[j],
+      //     value: bottom[j],
+      //   })
       // }
-      // this.output.push(['total',bottom.reduce((a,b)=>a+b,0)])
+      // this.guild.push({
+      //   name: 'total',
+      //   value: bottom.reduce((a,b)=>a+b,0)
+      // })
     }
   }
 }
