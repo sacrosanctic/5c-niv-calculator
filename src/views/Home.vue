@@ -32,6 +32,9 @@
           hide-default-footer
         >
         </v-data-table>
+        <p>
+          {{guildCount}}
+        </p>
       </v-col>
     </v-row>
     <v-row>
@@ -61,6 +64,7 @@ export default {
     cardLookup: [],
     lookup: [],
     guild: [],
+    guildCount: '',
     guildHeader: [
       {
         text: 'name',
@@ -87,7 +91,7 @@ export default {
       // let promise = []
       let sbCheck = false
       for(let i=0;i<cardList.length;i++) {
-        if(cardList[i].match(/sideboard[:]*/gi)) {
+        if(cardList[i].match(/sideboard[:]*/gi) || cardList[i] === '') {
           sbCheck = true
           continue
         }
@@ -96,18 +100,9 @@ export default {
           amount: cardList[i].substr(0,cardList[i].indexOf(' '))
         }
         sbCheck ? sb.push(obj) : mb.push(obj)
-
-        // promise.push(this.getCard(obj.name))
-        //   .then(data => {
-        //     this.cardLookup.push(data)
-        //   })
       }
       this.mb = mb
       this.sb = sb
-      // Promise.all(promise)
-      //   .then(() => {
-      //     // this.guildTable()
-      //   })
     },
     lookupCards() {
       let promise = []
@@ -215,9 +210,12 @@ export default {
           value: guildCount[i]
         })
       }
-      this.guild.push(
-        Object.fromEntries(land.map((_,i)=>[land[i],landCount[i]]))
-      )
+
+      this.guild.push({
+        name: 'total',
+        value: guildCount.reduce((a,b)=>a+b,0)
+        // Object.fromEntries(land.map((_,i)=>[land[i],landCount[i]]))
+      })
 
 
       // this.guild = []
@@ -233,6 +231,7 @@ export default {
       //   name: 'total',
       //   value: bottom.reduce((a,b)=>a+b,0)
       // })
+      this.guildCount = guildCount
     }
   }
 }
