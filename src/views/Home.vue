@@ -11,7 +11,7 @@
     <v-row>
       <v-col>
         <v-data-table
-          v-if="mb"
+          v-if="guild"
           :headers="guildHeader"
           :items="guild"
           class="elevation-1"
@@ -64,6 +64,7 @@ export default {
     cardLookup: [],
     lookup: [],
     guild: [],
+    deck: [],
     guildCount: '',
     guildHeader: [
       {
@@ -81,14 +82,53 @@ export default {
   },
   methods: {
     test() {
-      this.parseInput()
-      this.lookupCards()
+    this.parseInput2()
+    // this.parseInput()
+      // this.lookupCards()
+    },
+    parseInput2() {
+      let cardList = this.input.split(/\r?\n/)
+      let sb = false
+      let promise = []
+      for(let i=0;i<cardList.length;i++) {
+        if(cardList[i].match(/sideboard[:]*/gi) || cardList[i] === '') {
+          sb = true
+          continue
+        }
+          promise.push(this.getCard(
+            cardList[i].substr(cardList[i].indexOf(' ')+1)
+          )
+          .then(data => {
+            this.deck.push({
+              ...data,
+              amount: Number(cardList[i].substr(0,cardList[i].indexOf(' '))),
+              sideboard: sb,
+            })
+          }))
+      }
+      Promise.all(promise)
+      .then(()=> {
+        console.log(this.deck.filter((obj)=> obj.sideboard === true).length)
+        console.log(this.deck.filter((obj)=> obj.colors === 'UW').length)
+        let temp = {}
+        this.deck.forEach(function(v) {
+          temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount
+        })
+        console.log(temp)
+        this.guild = Object.entries(temp).map((e)=>{
+          return {
+            name: e[0],
+            value: e[1],
+          }
+        })
+
+      })
+
     },
     parseInput() {
       let cardList = this.input.split(/\r?\n/)
       let mb = []
       let sb = []
-      // let promise = []
       let sbCheck = false
       for(let i=0;i<cardList.length;i++) {
         if(cardList[i].match(/sideboard[:]*/gi) || cardList[i] === '') {
