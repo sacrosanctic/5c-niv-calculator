@@ -9,10 +9,7 @@
       <v-toolbar-items>
       <v-btn class="primary--text" text to="/">Home</v-btn>
       <v-btn class="primary--text" text to="/about">prob</v-btn>
-      <v-btn class="primary--text" text to="/test">test</v-btn>
-
       </v-toolbar-items>
-
     </v-app-bar>
 
     <v-content>

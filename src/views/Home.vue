@@ -7,19 +7,23 @@
         <v-textarea v-model="input"></v-textarea>
         <v-btn @click.stop="test">calculate</v-btn>
       </v-col>
-    </v-row>
-    <v-row>
       <v-col>
         <v-data-table
           v-if="guild"
           :headers="guildHeader"
           :items="guild"
           class="elevation-1"
+          group-by="colour"
           dense
           disable-pagination
           hide-default-footer
         >
         </v-data-table>
+
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
       </v-col>
       <v-col>
         <v-data-table
@@ -65,6 +69,7 @@ export default {
     lookup: [],
     guild: [],
     deck: [],
+    promise: [],
     guildCount: '',
     guildHeader: [
       {
@@ -83,47 +88,56 @@ export default {
   methods: {
     test() {
     this.parseInput2()
+    this.anaylizeDeck()
     // this.parseInput()
       // this.lookupCards()
     },
     parseInput2() {
       let cardList = this.input.split(/\r?\n/)
+      let sbRecord = []
       let sb = false
-      let promise = []
+      this.deck = []
+      // let promise = []
       for(let i=0;i<cardList.length;i++) {
         if(cardList[i].match(/sideboard[:]*/gi) || cardList[i] === '') {
           sb = true
           continue
         }
-          promise.push(this.getCard(
+          sbRecord[i] = sb
+          this.promise.push(this.getCard(
             cardList[i].substr(cardList[i].indexOf(' ')+1)
           )
           .then(data => {
             this.deck.push({
               ...data,
               amount: Number(cardList[i].substr(0,cardList[i].indexOf(' '))),
-              sideboard: sb,
+              sideboard: sbRecord[i],
             })
           }))
       }
-      Promise.all(promise)
+    },
+    anaylizeDeck() {
+      this.guild = []
+      this.guildCount = []
+
+      Promise.all(this.promise)
       .then(()=> {
-        console.log(this.deck.filter((obj)=> obj.sideboard === true).length)
-        console.log(this.deck.filter((obj)=> obj.colors === 'UW').length)
         let temp = {}
         this.deck.forEach(function(v) {
+          if(v.sideboard) return
           temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount
         })
-        console.log(temp)
         this.guild = Object.entries(temp).map((e)=>{
           return {
             name: e[0],
             value: e[1],
+            colour: e[0].length
           }
         })
-
+        this.guild.forEach(v=>{
+          if(v.name.length==2) this.guildCount.push(v.value)
+        })
       })
-
     },
     parseInput() {
       let cardList = this.input.split(/\r?\n/)
