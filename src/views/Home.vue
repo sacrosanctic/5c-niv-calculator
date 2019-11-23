@@ -95,17 +95,8 @@ export default {
           return card.colors == obj.name && !card.sideboard;
         })
         .reduce((str, card) => {
-          return str + card.amount + ' ' + card.name + '\r\n'
-          // str + card.name;
+          return str + card.amount + " " + card.name + "\r\n";
         }, "");
-      //     .map(card => {
-      //       return card.amount + ' ' + card.name;
-      //     });
-      //     let str = ''
-      //     test.forEach(v=>{
-      //       str+=v
-      //     })
-      //     return str
     },
     test() {
       this.parseInput2();
@@ -146,13 +137,18 @@ export default {
         let temp = {};
         this.deck.forEach(function(v) {
           if (v.sideboard) return;
-          temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount;
+          // if (v.colors == 0) {
+          //   if (v.type_line.search(/land/gi))
+          //     temp.land = (temp.land || 0) + 1 * v.amount;
+          //   else temp.artifact = (temp.artifact || 0) + 1 * v.amount;
+          // } else
+           temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount;
         });
         this.guild = Object.entries(temp).map(e => {
           return {
             name: e[0],
             value: e[1],
-            colour: e[0].length
+            colour: e[0].length,
           };
         });
         this.guild.forEach(v => {
