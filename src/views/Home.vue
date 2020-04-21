@@ -2,10 +2,12 @@
   <v-container>
     <v-row>
       <v-col cols=6>
-        <v-text-field label="source"></v-text-field>
-        <v-text-field label="date"></v-text-field>
-        <v-textarea v-model="input"></v-textarea>
-        <v-btn @click.stop="test">calculate</v-btn>
+        <v-text-field label="url" v-model="url"></v-text-field>
+        <!-- <v-text-field label="source"></v-text-field>
+        <v-text-field label="date"></v-text-field> -->
+        <v-textarea label="list" v-model="input"></v-textarea>
+        <v-btn @click.stop="parseList">list calc</v-btn>
+        <v-btn @click.stop="getDeck">URL calc</v-btn>
       </v-col>
     </v-row>
     <v-row>
@@ -39,9 +41,15 @@
         <p>
           {{output}}
         </p>
+        <h2>Preview</h2>
+        <p>
+          {{preview}}
+        </p>
+        <h2>Mainboard</h2>
         <p>
           {{mb}}
         </p>
+        <h2>Sideboard</h2>
         <p>
           {{sb}}
         </p>
@@ -51,8 +59,12 @@
 </template>
 
 <script>
+import txt from 'raw-loader!./file.txt'
+
 export default {
   data: () => ({
+    url: "https://deckbox.org/sets/2641250",
+    preview: testdecklist,
     input: null,
     output: null,
     mb: null,
@@ -76,11 +88,27 @@ export default {
     // console.log(this.getCard('Dreadhorde Arcanist'))
   },
   methods: {
-    test() {
+    getDeck() {
+      //usage: scrape desklist data from website
+      //currently none functional
+      //ref https://stackoverflow.com/questions/27745/getting-parts-of-a-url-regex
+
+    // let regex = this.url.match(/^((http[s]?|ftp):\/)?\/?([^:/\s]+)((\/\w+)*\/)([\w\-.]+[^#?\s]+)(.*)?(#[\w-]+)?$/)
+    //   const obj = {
+    //     url: this.url,
+    //     hostname: regex[3],
+    //     path: regex[4],
+    //     decklist_url: this.url + "/export"
+    //   }
+
+    //   this.output = obj
+
+    },
+    parseList() {
       this.parseInput()
-      this.lookupCards()
     },
     parseInput() {
+      if (this.input == null) return false
       let cardList = this.input.split(/\r?\n/)
       let mb = []
       let sb = []
@@ -97,17 +125,10 @@ export default {
         }
         sbCheck ? sb.push(obj) : mb.push(obj)
 
-        // promise.push(this.getCard(obj.name))
-        //   .then(data => {
-        //     this.cardLookup.push(data)
-        //   })
       }
       this.mb = mb
       this.sb = sb
-      // Promise.all(promise)
-      //   .then(() => {
-      //     // this.guildTable()
-      //   })
+      this.lookupCards()
     },
     lookupCards() {
       let promise = []
@@ -116,7 +137,7 @@ export default {
           this.getCard(card.name)
             .then(data => {
               this.cardLookup.push(data)
-          })
+          }).catch(err=>{console.log(err)})
         )
       }
       Promise.all(promise)
@@ -132,20 +153,27 @@ export default {
       else {
         let card = await this.$axios.get('https://api.scryfall.com/cards/named?fuzzy=' + encodeURI(name))
         card = card.data
-        if(card.layout!='normal') {
-          card = card.card_faces[0]
-        }
         const obj = this.createCardObj(card)
         this.$store.dispatch('cacheCard', obj)
         return obj
       }
     },
     createCardObj(card) {
-      return {
-        cmc: card.cmc,
-        colors: card.colors.sort().join(''),
-        name: card.name,
-        type_line: card.type_line,
+      if(card.layout=='transform') {
+        return {
+          cmc: card.cmc,
+          colors: card.card_faces[0].colors.sort().join(''),
+          name: card.card_faces[0].name,
+          type_line: card.card_faces[0].type_line,
+        }
+      }
+      else {
+        return {
+          cmc: card.cmc,
+          colors: card.colors.sort().join(''),
+          name: card.name,
+          type_line: card.type_line,
+        }
       }
     },
     guildTable() {
@@ -171,9 +199,12 @@ export default {
       let dorkCount = Array(dork.length).fill(0)
       let cardCount = Array(keyCards.length).fill(0)
       let landCount = Array(land.length).fill(0)
+      let total = 0
       // let otherCount = 0
       let index = null;
       for(const [i, card] of this.mb.entries()) {
+        total+=Number(card.amount)
+
         // console.log(card.name)
         //find cards
         index = keyCards.findIndex(a=>a==this.cardLookup[i].name)
@@ -209,16 +240,24 @@ export default {
       }
       this.guild = []
       for(let i=0;i<guild.length;i++) {
-
         this.guild.push({
           name: guild[i],
           value: guildCount[i]
         })
       }
+      let guildsum = this.guild.reduce((a,b)=>a+(b['value'] || 0),0)
+      this.guild.push({
+        name: "other",
+        value: total-guildsum
+      })
+      this.guild.push({
+        name: "total",
+        value: total
+      })
       this.guild.push(
         Object.fromEntries(land.map((_,i)=>[land[i],landCount[i]]))
       )
-
+        this.preview = guildCount
 
       // this.guild = []
       // let top = [...keyCards, ...dork, ...guild, ...land, 'other']

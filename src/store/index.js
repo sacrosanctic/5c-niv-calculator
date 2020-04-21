@@ -15,12 +15,12 @@ export default new Vuex.Store({
   actions: {
     cacheCard: firebaseAction((context,payload) => {
       return db
-        .ref('cards').child(payload.name)
+        .ref('cards').child(encodeURIComponent(payload.name).replace(/\./g,'%2E'))
         .set(JSON.stringify(payload))
     }),
     getCard: firebaseAction((context,payload) => {
       return db
-        .ref('cards').child(payload).once('value')
+        .ref('cards').child(encodeURIComponent(payload).replace(/\./g,'%2E')).once('value')
     }),
   },
   modules: {
