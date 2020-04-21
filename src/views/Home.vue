@@ -59,12 +59,11 @@
 </template>
 
 <script>
-import txt from 'raw-loader!./file.txt'
 
 export default {
   data: () => ({
     url: "https://deckbox.org/sets/2641250",
-    preview: testdecklist,
+    preview: null,
     input: null,
     output: null,
     mb: null,
