@@ -2,14 +2,28 @@
   <v-container>
     <v-row>
       <v-col>
-        <v-text-field value="amount" v-model="amount"></v-text-field>
+        <v-text-field value="amount" v-model="loopInput" outlined></v-text-field>
       </v-col>
       <v-col>
-        <v-btn @click="combinationLoop(amount)">Loop 1</v-btn>
-        <v-btn @click="combinationLoop2(amount)">Loop 2 (cumulative)</v-btn>
+        <v-btn @click="combinationLoop(loopInput)">Loop X</v-btn>
+        <v-btn @click="combinationLoop2(loopInput)">Loop 1 to X</v-btn>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-text-field value="amount" v-model="hitSpreadInput"></v-text-field>
+      </v-col>
+      <v-col>
+        <v-btn @click="spreadLookup(hitSpreadInput)">Lookup</v-btn>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+
+      </v-col>
+      <v-col>
         <v-btn @click="clear()">Clear</v-btn>
         <v-btn @click="exportCSV()">Export</v-btn>
-        <v-btn @click="probabilityLookup()">Probability Lookup</v-btn>
       </v-col>
     </v-row>
     <div>
@@ -149,7 +163,8 @@ export default {
       Other: 41,
       // Total: 18,
     },
-    amount: '',
+    loopInput: null,
+    hitSpreadInput: null,
     possibleHits: 0,
     goodstuff: [],
     combination: [],
@@ -157,16 +172,10 @@ export default {
   mounted() {
   },
   methods: {
-    probabilityLookup() {
-      let array = []
-      array = [3,1,3,2,1,3,4,4,0,4]
-      this.possibleHits = array.reduce((a,b)=>a+b,0)
+    spreadLookup(value) {
+      let array = value.split(',').map(Number)
       this.transpose(array)
-      this.result()
-      array = [4,0,4,4,3,1,2,3,1,3]
-      this.possibleHits = array.reduce((a,b)=>a+b,0)
-      this.transpose(array)
-      this.result()
+      this.calculateProbability()
     },
     exportCSV() {
       let csvContent = "data:text/csv;charset=utf-8,"
@@ -192,13 +201,12 @@ export default {
       }
     },
     combinationLoop(numHit) {
-      this.possibleHits = numHit
       this.combination = []
       this.findCombinations(numHit)
       let i=0
       for(const item of this.combination) {
         this.transpose(item)
-        this.result()
+        this.calculateProbability()
         i++
         console.log('progress: ' + this.possibleHits + '-' + i)
         // if(i>500) break
@@ -215,13 +223,25 @@ export default {
       this.deck.BR = array[7] ? array[7] : 0
       this.deck.BG = array[8] ? array[8] : 0
       this.deck.RG = array[9] ? array[9] : 0
-      this.deck.Other = 59-array.reduce((a,b)=>a+b,0)
+
+      const possibleHits = array.reduce((a,b)=>a+b,0)
+      this.deck.Other = 59-possibleHits
+      this.possibleHits = possibleHits
       // this.deck.Total = numHit
     },
     // https://www.geeksforgeeks.org/find-all-combinations-that-adds-upto-given-number-2/
-    // this one works, permutation with repeats
-    // this.findCombinations(30)
-    findCombinationsUtil($arr, $index, $num, $reducedNum) {
+    /* Function to find out all
+      combinations of positive numbers
+      that add upto given number.
+      Includes duplicates */
+    findCombinations($n) {
+      // array to store the combinations
+      // It can contain max n elements
+      let $arr = []
+      //find all combinations
+      this.findCombinationsRecursion($arr, 0, $n, $n)
+    },
+    findCombinationsRecursion($arr, $index, $num, $reducedNum) {
       // Base condition
       if ($reducedNum < 0 || $index > 10) return
 
@@ -248,35 +268,17 @@ export default {
 
         // call recursively with
         // reduced number
-        this.findCombinationsUtil($arr, $index + 1, $num, $reducedNum - $k)
+        this.findCombinationsRecursion($arr, $index + 1, $num, $reducedNum - $k)
       }
     },
-
-    /* Function to find out all
-      combinations of positive numbers
-      that add upto given number.
-      It uses findCombinationsUtil() */
-    findCombinations($n) {
-      // array to store the combinations
-      // It can contain max n elements
-      let $arr = []
-
-      //find all combinations
-      this.findCombinationsUtil($arr, 0, $n, $n)
-    },
-    result() {
+    calculateProbability() {
       let temp = {}
       let expected_hits = 0
-      // let text = ''
       for (let number_hits = 0; number_hits < 11; number_hits++) {
         const hit_prob = this.determine_hit_prob(number_hits)
-        // text = 'Probability of hitting '+ number_hits + ' cards: '+ (hit_prob*100).toFixed(1) + '%.'
-        // console.log(text)
         temp[number_hits]=(hit_prob*100).toFixed(4)
         expected_hits += number_hits * hit_prob;
       }
-      // text = 'Expected Number of hits: ' + expected_hits
-      // console.log(text)
       temp.average=expected_hits.toFixed(4)
 
       let maxGuild = 0;
@@ -284,8 +286,6 @@ export default {
         if (key == "Other") continue;
         if (value != 0) maxGuild++;
       }
-      // text = 'Hitting '+maxGuild+' cards happen once per ' + (1/this.determine_hit_prob(maxGuild)).toFixed(0) + ' games on average.'
-      // console.log(text)
       temp.maxHit=maxGuild
       temp.maxHitChance=(1/this.determine_hit_prob(maxGuild)).toFixed(0)
       this.goodstuff.push({...this.deck,...temp,possibleHits: this.possibleHits})

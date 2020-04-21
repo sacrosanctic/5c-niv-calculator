@@ -9,20 +9,31 @@
         <v-btn @click.stop="parseList">list calc</v-btn>
         <v-btn @click.stop="getDeck">URL calc</v-btn>
       </v-col>
-    </v-row>
-    <v-row>
       <v-col>
         <v-data-table
-          v-if="mb"
+          v-if="guild"
           :headers="guildHeader"
           :items="guild"
           class="elevation-1"
+          group-by="colour"
+          item-key="name"
+          :expanded="expanded"
           dense
           disable-pagination
           hide-default-footer
+          show-expand
         >
+          <template v-slot:top>
+            <v-switch label="expand all"></v-switch>
+          </template>
+          <template v-slot:expanded-item="{ headers, item }">
+            <td :colspan="guildHeader.length" style="white-space:pre">{{clicked(item)}}</td>
+          </template>
         </v-data-table>
       </v-col>
+    </v-row>
+    <v-row>
+      <v-col></v-col>
       <v-col>
         <v-data-table
           v-if="output"
@@ -32,8 +43,8 @@
           dense
           disable-pagination
           hide-default-footer
-        >
-        </v-data-table>
+        ></v-data-table>
+        <p>{{guildCount}}</p>
       </v-col>
     </v-row>
     <v-row>
@@ -72,18 +83,25 @@ export default {
     cardLookup: [],
     lookup: [],
     guild: [],
+    deck: [],
+    promise: [],
+    guildCount: "",
     guildHeader: [
       {
-        text: 'name',
-        value: 'name',
+        text: "name",
+        value: "name"
       },
       {
-        text: 'value',
-        value: 'value',
+        text: "value",
+        value: "value"
       },
-    ],
+      {
+        text: "",
+        value: "data-table-expand"
+      }
+    ]
   }),
-  mounted () {
+  mounted() {
     // console.log(this.getCard('Dreadhorde Arcanist'))
   },
   methods: {
@@ -106,32 +124,80 @@ export default {
     parseList() {
       this.parseInput()
     },
+    // parseInput() {
+    //   if (this.input == null) return false
+    //   let cardList = this.input.split(/\r?\n/)
+    //   let mb = []
+    //   let sb = []
+    //   // let promise = []
+    //   for (let i = 0; i < cardList.length; i++) {
+    //     if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
+    //       sb = true;
+    //       continue;
+    //     }
+    //     sbRecord[i] = sb;
+    //     this.promise.push(
+    //       this.getCard(cardList[i].substr(cardList[i].indexOf(" ") + 1)).then(
+    //         data => {
+    //           this.deck.push({
+    //             ...data,
+    //             amount: Number(cardList[i].substr(0, cardList[i].indexOf(" "))),
+    //             sideboard: sbRecord[i]
+    //           });
+    //         }
+    //       )
+    //     );
+      // }
+    // },
+    anaylizeDeck() {
+      this.guild = [];
+      this.guildCount = [];
+
+      Promise.all(this.promise).then(() => {
+        let temp = {};
+        this.deck.forEach(function(v) {
+          if (v.sideboard) return;
+          // if (v.colors == 0) {
+          //   if (v.type_line.search(/land/gi))
+          //     temp.land = (temp.land || 0) + 1 * v.amount;
+          //   else temp.artifact = (temp.artifact || 0) + 1 * v.amount;
+          // } else
+           temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount;
+        });
+        this.guild = Object.entries(temp).map(e => {
+          return {
+            name: e[0],
+            value: e[1],
+            colour: e[0].length,
+          };
+        });
+        this.guild.forEach(v => {
+          if (v.name.length == 2) this.guildCount.push(v.value);
+        });
+      });
+    },
     parseInput() {
-      if (this.input == null) return false
-      let cardList = this.input.split(/\r?\n/)
-      let mb = []
-      let sb = []
-      // let promise = []
-      let sbCheck = false
-      for(let i=0;i<cardList.length;i++) {
-        if(cardList[i].match(/sideboard[:]*/gi)) {
-          sbCheck = true
-          continue
+      let cardList = this.input.split(/\r?\n/);
+      let mb = [];
+      let sb = [];
+      let sbCheck = false;
+      for (let i = 0; i < cardList.length; i++) {
+        if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
+          sbCheck = true;
+          continue;
         }
         const obj = {
-          name: cardList[i].substr(cardList[i].indexOf(' ')+1),
-          amount: cardList[i].substr(0,cardList[i].indexOf(' '))
-        }
-        sbCheck ? sb.push(obj) : mb.push(obj)
-
+          name: cardList[i].substr(cardList[i].indexOf(" ") + 1),
+          amount: cardList[i].substr(0, cardList[i].indexOf(" "))
+        };
+        sbCheck ? sb.push(obj) : mb.push(obj);
       }
-      this.mb = mb
-      this.sb = sb
-      this.lookupCards()
+      this.mb = mb;
+      this.sb = sb;
     },
     lookupCards() {
-      let promise = []
-      for(const card of this.mb) {
+      let promise = [];
+      for (const card of this.mb) {
         promise.push(
           this.getCard(card.name)
             .then(data => {
@@ -139,10 +205,9 @@ export default {
           }).catch(err=>{console.log(err)})
         )
       }
-      Promise.all(promise)
-        .then(() => {
-          this.guildTable()
-        })
+      Promise.all(promise).then(() => {
+        this.guildTable();
+      });
     },
     async getCard(name) {
       const result = await this.$store.dispatch('getCard', name)
@@ -176,14 +241,25 @@ export default {
       }
     },
     guildTable() {
-      const guild = ['BG','BR','BW','BU','GR','GW','GU','RW','RU','UW']
+      const guild = [
+        "BG",
+        "BR",
+        "BW",
+        "BU",
+        "GR",
+        "GW",
+        "GU",
+        "RW",
+        "RU",
+        "UW"
+      ];
       const dork = [
-        'Birds of Paradise',
-        'Gilded Goose',
-        'Noble Hierach',
-        'Sylvan Caryatid',
-        'Utopia Sprawl',
-      ]
+        "Birds of Paradise",
+        "Gilded Goose",
+        "Noble Hierach",
+        "Sylvan Caryatid",
+        "Utopia Sprawl"
+      ];
       const keyCards = [
         'Niv-Mizzet Reborn',
         'Arcum\'s Astrolabe',
@@ -206,34 +282,35 @@ export default {
 
         // console.log(card.name)
         //find cards
-        index = keyCards.findIndex(a=>a==this.cardLookup[i].name)
-        if(index > -1) {
-          cardCount[index]+=Number(card.amount)
-          if(this.cardLookup[i].name=="Glittering Wish") guildCount[5]+=Number(card.amount)
-          continue
+        index = keyCards.findIndex(a => a == this.cardLookup[i].name);
+        if (index > -1) {
+          cardCount[index] += Number(card.amount);
+          if (this.cardLookup[i].name == "Glittering Wish")
+            guildCount[5] += Number(card.amount);
+          continue;
         }
         //find dorks
-        index = dork.findIndex(a=>a==this.cardLookup[i].name)
-        if(index > -1) {
-          dorkCount[index]+=Number(card.amount)
-          continue
+        index = dork.findIndex(a => a == this.cardLookup[i].name);
+        if (index > -1) {
+          dorkCount[index] += Number(card.amount);
+          continue;
         }
         //find basic land
-        index = this.cardLookup[i].type_line.search(land[0])
-        if(index > -1) {
-          landCount[0]+=Number(card.amount)
-          continue
+        index = this.cardLookup[i].type_line.search(land[0]);
+        if (index > -1) {
+          landCount[0] += Number(card.amount);
+          continue;
         }
         //find other land
-        index = this.cardLookup[i].type_line.search(land[1])
-        if(index > -1) {
-          landCount[1]+=Number(card.amount)
-          continue
+        index = this.cardLookup[i].type_line.search(land[1]);
+        if (index > -1) {
+          landCount[1] += Number(card.amount);
+          continue;
         }
-        index = guild.findIndex(a=>a==this.cardLookup[i].colors)
-        if(index > -1) {
-          guildCount[index]+=Number(card.amount)
-          continue
+        index = guild.findIndex(a => a == this.cardLookup[i].colors);
+        if (index > -1) {
+          guildCount[index] += Number(card.amount);
+          continue;
         }
         // otherCount++
       }
@@ -242,7 +319,7 @@ export default {
         this.guild.push({
           name: guild[i],
           value: guildCount[i]
-        })
+        });
       }
       let guildsum = this.guild.reduce((a,b)=>a+(b['value'] || 0),0)
       this.guild.push({
@@ -271,7 +348,8 @@ export default {
       //   name: 'total',
       //   value: bottom.reduce((a,b)=>a+b,0)
       // })
+      this.guildCount = guildCount;
     }
   }
-}
+};
 </script>
