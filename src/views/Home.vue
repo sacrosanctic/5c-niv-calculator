@@ -5,58 +5,92 @@
         <v-text-field label="url" v-model="url"></v-text-field>
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
-        <v-textarea label="list" v-model="input"></v-textarea>
+        <v-textarea label="list" v-model="input">
+        </v-textarea>
         <v-btn @click.stop="parseList">list calc</v-btn>
         <v-btn @click.stop="getDeck">URL calc</v-btn>
       </v-col>
-      <!-- <v-col>
+      <v-col>
         <v-data-table
-          v-if="guild"
+          v-if="page.result"
           :headers="guildHeader"
           :items="guild"
           class="elevation-1"
-          group-by="colour"
           item-key="name"
-          :expanded="expanded"
+          :expanded.sync="expanded"
           dense
           disable-pagination
           hide-default-footer
           show-expand
+          sort-by="colour"
         >
           <template v-slot:top>
-            <v-switch label="expand all"></v-switch>
+            <!-- <v-switch label="expand all"></v-switch> -->
           </template>
           <template v-slot:expanded-item="{ headers, item }">
-            <td :colspan="guildHeader.length" style="white-space:pre">{{clicked(item)}}</td>
+            <td :colspan="guildHeader.length" style="white-space:pre">more stuff here please {{item}}</td>
           </template>
         </v-data-table>
-      </v-col>-->
+      </v-col>
     </v-row>
-    <v-row>
-      <v-col></v-col>
+    <v-row v-if="page.result">
       <v-col>
-        <v-data-table
-          v-if="output"
-          :headers="guildHeader"
-          :items="output"
-          class="elevation-1"
-          dense
-          disable-pagination
-          hide-default-footer
-        ></v-data-table>
-        <p>{{guildCount}}</p>
+        <h2>Number of hits</h2>
+        <p>
+          Deck size: {{result.total}}
+        </p>
+        <p>
+          Niv-Mizzet Reborn Hits: {{result.hits}}
+        </p>
+      </v-col>
+      <v-col>
+        <h2>Deck Breakdown</h2>
+        <p>Land: {{result.lands}}</p>
+        <!-- <p v-for="color in results.colors" :key="color"> {{ color }}</p> -->
+        <p>0 Colour: {{result.colors.c0}}</p>
+        <p>1 Colour: {{result.colors.c1}}</p>
+        <p>2 Colour: {{result.colors.c2}}</p>
+        <p>3 Colour: {{result.colors.c3}}</p>
+        <p>4 Colour: {{result.colors.c4}}</p>
+        <p>5 Colour: {{result.colors.c5}}</p>
+      </v-col>
+      <v-col>
+        <h2>Guild Breakdown</h2>
+        <p>Land: {{result.lands}}</p>
+        <p>0 Colour: {{result.colors.c0}}</p>
+        <p>1 Colour: {{result.colors.c1}}</p>
+        <p>2 Colour: {{result.colors.c2}}</p>
+        <p>3 Colour: {{result.colors.c3}}</p>
+        <p>4 Colour: {{result.colors.c4}}</p>
+        <p>5 Colour: {{result.colors.c5}}</p>
+      </v-col>
+      <v-col>
+        <h2>Colour Breakdown</h2>
+        <p>Land: {{result.lands}}</p>
+        <p>0 Colour: {{result.colors.c0}}</p>
+        <p>1 Colour: {{result.colors.c1}}</p>
+        <p>2 Colour: {{result.colors.c2}}</p>
+        <p>3 Colour: {{result.colors.c3}}</p>
+        <p>4 Colour: {{result.colors.c4}}</p>
+        <p>5 Colour: {{result.colors.c5}}</p>
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <p>{{output}}</p>
+        <p>{{guildCount}}</p>
+        <h2>Guild Colours</h2>
+        <p>{{guild}}</p>
+      </v-col>
+      <v-col>
+        <p>{{result}}</p>
         <h2>Preview</h2>
         <p>{{preview}}</p>
-        <div v-if="processed">
-          <h2>Mainboard {{ mb.reduce((a,b)=>a+(b['amount'] || 0),0) }}</h2>
+        <p>{{page}}</p>
+        <div v-if="page.result">
+          <h2>Mainboard {{ deck.mb.reduce((a,b)=>a+(b['amount'] || 0),0) }}</h2>
           <p>{{deck.mb}}</p>
-          <h2>Sideboard {{ sb.reduce((a,b)=>a+(b['amount'] || 0),0) }}</h2>
-          <p>{{sb}}</p>
+          <h2>Sideboard {{ deck.sb.reduce((a,b)=>a+(b['amount'] || 0),0) }}</h2>
+          <p>{{deck.sb}}</p>
         </div>
       </v-col>
     </v-row>
@@ -66,21 +100,23 @@
 <script>
 export default {
   data: () => ({
-    processed: false,
-
+    page: {
+      running:false,
+      result:false,
+    },
+    expanded: [],
     url: "https://deckbox.org/sets/2641250",
     preview: null,
     input: null,
     output: null,
-    mb: null,
-    sb: null,
     cardCache: null,
     cardLookup: [],
     lookup: [],
     guild: [],
+    result: {},
     deck: {
-      mb: null,
-      sb: null,
+      mb: [],
+      sb: [],
     },
     promise: [],
     guildCount: "",
@@ -100,7 +136,6 @@ export default {
     ]
   }),
   mounted() {
-    // console.log(this.getCard('Dreadhorde Arcanist'))
   },
   methods: {
     getDeck() {
@@ -119,99 +154,82 @@ export default {
     parseList() {
       this.parseInput();
     },
-    // parseInput() {
-    //   if (this.input == null) return false
-    //   let cardList = this.input.split(/\r?\n/)
-    //   let mb = []
-    //   let sb = []
-    //   // let promise = []
-    //   for (let i = 0; i < cardList.length; i++) {
-    //     if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
-    //       sb = true;
-    //       continue;
-    //     }
-    //     sbRecord[i] = sb;
-    //     this.promise.push(
-    //       this.getCard(cardList[i].substr(cardList[i].indexOf(" ") + 1)).then(
-    //         data => {
-    //           this.deck.push({
-    //             ...data,
-    //             amount: Number(cardList[i].substr(0, cardList[i].indexOf(" "))),
-    //             sideboard: sbRecord[i]
-    //           });
-    //         }
-    //       )
-    //     );
-    // }
-    // },
     parseInput() {
       let cardList = this.input.split(/\r?\n/);
-      let mb = [];
-      let sb = [];
-      let sbCheck = false;
-      this.processed = false;
+      let location = "mb"
+      let promise = []
+      this.page.result = false;
+      this.deck.mb = []
+      this.deck.sb = []
 
       for (let i = 0; i < cardList.length; i++) {
         if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
-          sbCheck = true;
-          continue;
+          location = "sb"
+          continue
         }
-        const obj = {
-          name: cardList[i].substr(cardList[i].indexOf(" ") + 1),
-          amount: Number(cardList[i].substr(0, cardList[i].indexOf(" ")))
-        };
-        sbCheck ? sb.push(obj) : mb.push(obj);
-      }
-      this.mb = mb
-      this.sb = sb
-      this.deck.mb = mb
-      this.processed = true;
 
-      this.lookupCards()
+        //create card object
+        const card = {
+          name: cardList[i].substr(cardList[i].indexOf(" ") + 1),
+          amount: Number(cardList[i].substr(0, cardList[i].indexOf(" "))),
+          location: location,
+        }
+
+        //get card metadata and push new card object into deck
+        promise.push(
+          this.getCard(card.name)
+          .then(data=>{
+            this.deck[card.location].push({...data,amount:card.amount})
+          })
+          .catch(err=>{
+            console.log(err);
+          })
+        )
+      }
+      Promise.all(promise).then(()=>{
+        // this.guildTable();
+        this.anaylizeDeck()
+      })
     },
     anaylizeDeck() {
       this.guild = [];
       this.guildCount = [];
 
-      Promise.all(this.promise).then(() => {
-        let temp = {};
-        this.deck.forEach(function(v) {
-          if (v.sideboard) return;
-          // if (v.colors == 0) {
-          //   if (v.type_line.search(/land/gi))
-          //     temp.land = (temp.land || 0) + 1 * v.amount;
-          //   else temp.artifact = (temp.artifact || 0) + 1 * v.amount;
-          // } else
-          temp[v.colors] = (temp[v.colors] || 0) + 1 * v.amount;
-        });
-        this.guild = Object.entries(temp).map(e => {
-          return {
-            name: e[0],
-            value: e[1],
-            colour: e[0].length
-          };
-        });
-        this.guild.forEach(v => {
-          if (v.name.length == 2) this.guildCount.push(v.value);
-        });
-      });
-    },
-    lookupCards() {
-      let promise = [];
-      for (const card of this.mb) {
-        promise.push(
-          this.getCard(card.name)
-            .then(data => {
-              this.cardLookup.push(data);
-            })
-            .catch(err => {
-              console.log(err);
-            })
-        );
+      let temp = {}
+      this.deck.mb.forEach(a=>{
+        //count up the card by colour
+        temp[a.colors] = (temp[a.colors] || 0) + 1 * a.amount
+      })
+      this.guild = Object.entries(temp).map(e => {
+        return {
+          name: e[0],
+          value: e[1],
+          colour: e[0].length,
+        }
+      })
+      this.guild.forEach(v=>{
+        if (v.name.length == 2) this.guildCount.push(v.value)
+      })
+      const obj = {
+        total: this.deck.mb.reduce((a,b)=>a+(b.amount||0),0),
+        lands: this.deck.mb.reduce((a,b)=>a+(b.type_line.search(/land/gi)>-1?b.amount||0:0),0),
+        colors: {
+          c0: this.deck.mb.reduce((a,b)=>a+(b.colors.length==0&&b.type_line.search(/land/gi)==-1?b.amount||0:0),0),
+          c1: this.deck.mb.reduce((a,b)=>a+(b.colors.length==1?b.amount||0:0),0),
+          c2: this.deck.mb.reduce((a,b)=>a+(b.colors.length==2?b.amount||0:0),0),
+          c3: this.deck.mb.reduce((a,b)=>a+(b.colors.length==3?b.amount||0:0),0),
+          c4: this.deck.mb.reduce((a,b)=>a+(b.colors.length==4?b.amount||0:0),0),
+          c5: this.deck.mb.reduce((a,b)=>a+(b.colors.length==5?b.amount||0:0),0),
+        },
+        guilds: {
+          ...this.guild
+          }
       }
-      Promise.all(promise).then(() => {
-        this.guildTable();
-      });
+      obj.hits = obj.colors.c2
+      obj.nonhits = obj.total - obj.colors.c2
+
+      this.result = {...obj}
+      this.page.result = true
     },
     async getCard(name) {
       const result = await this.$store.dispatch("getCard", name);
@@ -220,7 +238,7 @@ export default {
       } else {
         let card = await this.$axios.get(
           "https://api.scryfall.com/cards/named?fuzzy=" + encodeURI(name)
-        );
+        )
         card = card.data;
         const obj = this.createCardObj(card);
         this.$store.dispatch("cacheCard", obj);
