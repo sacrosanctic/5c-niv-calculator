@@ -46,7 +46,6 @@
       <v-col>
         <h2>Deck Breakdown</h2>
         <p>Land: {{result.lands}}</p>
-        <!-- <p v-for="color in results.colors" :key="color"> {{ color }}</p> -->
         <p>0 Colour: {{result.colors.c0}}</p>
         <p>1 Colour: {{result.colors.c1}}</p>
         <p>2 Colour: {{result.colors.c2}}</p>
@@ -56,23 +55,11 @@
       </v-col>
       <v-col>
         <h2>Guild Breakdown</h2>
-        <p>Land: {{result.lands}}</p>
-        <p>0 Colour: {{result.colors.c0}}</p>
-        <p>1 Colour: {{result.colors.c1}}</p>
-        <p>2 Colour: {{result.colors.c2}}</p>
-        <p>3 Colour: {{result.colors.c3}}</p>
-        <p>4 Colour: {{result.colors.c4}}</p>
-        <p>5 Colour: {{result.colors.c5}}</p>
+        <p v-for="guild in result.guilds" :key="guild.name"> {{ guild.name+": "+ guild.value }}</p>
       </v-col>
       <v-col>
         <h2>Colour Breakdown</h2>
-        <p>Land: {{result.lands}}</p>
-        <p>0 Colour: {{result.colors.c0}}</p>
-        <p>1 Colour: {{result.colors.c1}}</p>
-        <p>2 Colour: {{result.colors.c2}}</p>
-        <p>3 Colour: {{result.colors.c3}}</p>
-        <p>4 Colour: {{result.colors.c4}}</p>
-        <p>5 Colour: {{result.colors.c5}}</p>
+        <p v-for="guild in result.nonguilds" :key="guild.name"> {{ guild.name + ": "+guild.value }}</p>
       </v-col>
     </v-row>
     <v-row>
@@ -133,7 +120,7 @@ export default {
         text: "",
         value: "data-table-expand"
       }
-    ]
+    ],
   }),
   mounted() {
   },
@@ -221,9 +208,8 @@ export default {
           c4: this.deck.mb.reduce((a,b)=>a+(b.colors.length==4?b.amount||0:0),0),
           c5: this.deck.mb.reduce((a,b)=>a+(b.colors.length==5?b.amount||0:0),0),
         },
-        guilds: {
-          ...this.guild
-          }
+        guilds: this.guild.filter(a=>a.name.length==2),
+        nonguilds: this.guild.filter(a=>a.name.length!=2)
       }
       obj.hits = obj.colors.c2
       obj.nonhits = obj.total - obj.colors.c2
@@ -245,18 +231,30 @@ export default {
         return obj;
       }
     },
+    //############
+    //a compare function to sort by WUBRG
+    //############
+    colorPieOrder(a,b) {
+      let sortedLetters = ["W","U","B","R","G"]
+			for(const letter of sortedLetters) {
+        if(a==b) return 0
+        if(a==letter) return -1
+        if(b==letter) return 1
+      }
+      return 0
+    },
     createCardObj(card) {
       if (card.layout == "transform") {
         return {
           cmc: card.cmc,
-          colors: card.card_faces[0].colors.sort().join(""),
+          colors: card.card_faces[0].colors.sort(this.colorPieOrder).join(""),
           name: card.card_faces[0].name,
           type_line: card.card_faces[0].type_line
         };
       } else {
         return {
           cmc: card.cmc,
-          colors: card.colors.sort().join(""),
+          colors: card.colors.sort(this.colorPieOrder).join(""),
           name: card.name,
           type_line: card.type_line
         };
