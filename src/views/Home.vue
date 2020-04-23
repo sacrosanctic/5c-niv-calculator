@@ -194,9 +194,6 @@ export default {
           colour: e[0].length,
         }
       })
-      this.guild.forEach(v=>{
-        if (v.name.length == 2) this.guildCount.push(v.value)
-      })
       const obj = {
         total: this.deck.mb.reduce((a,b)=>a+(b.amount||0),0),
         lands: this.deck.mb.reduce((a,b)=>a+(b.type_line.search(/land/gi)>-1?b.amount||0:0),0),
@@ -213,6 +210,16 @@ export default {
       }
       obj.hits = obj.colors.c2
       obj.nonhits = obj.total - obj.colors.c2
+
+      let temp2 = []
+      this.guild.forEach(v=>{
+        if(v.name.length == 2) temp2.push(v.value)
+      })
+      this.guildCount = Array(10).fill(0).map((a,i)=>{
+        return a + (temp2[i]||0)
+      })
+      this.guildCount.push(obj.nonhits)
+      this.guildCount = this.guildCount.join(",")
 
       this.result = {...obj}
       this.page.result = true

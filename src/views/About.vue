@@ -30,9 +30,10 @@
     </div>
     <p v-html="output"></p>
     <v-data-table
-    v-if="goodstuff"
+    v-if="results"
     :headers="headers"
-    :items="goodstuff"
+    :items="results"
+    dense
     ></v-data-table>
   </v-container>
 </template>
@@ -44,54 +45,58 @@ export default {
   data: () => ({
     headers: [
       {
+        text: 'Deck size',
+        value: 'deckSize'
+      },
+      {
         text: 'Possible hit',
         value: 'possibleHits'
       },
-      {
-        text: 'Guild 1',
+/*      {
+        text: 'WU',
         value: 'WU'
       },
       {
-        text: 'Guild 2',
+        text: 'WB',
         value: 'WB'
       },
       {
-        text: 'Guild 3',
+        text: 'WR',
         value: 'WR'
       },
       {
-        text: 'Guild 4',
+        text: 'WG',
         value: 'WG'
       },
       {
-        text: 'Guild 5',
+        text: 'UB',
         value: 'UB'
       },
       {
-        text: 'Guild 6',
+        text: 'UR',
         value: 'UR'
       },
       {
-        text: 'Guild 7',
+        text: 'UG',
         value: 'UG'
       },
       {
-        text: 'Guild 8',
+        text: 'BR',
         value: 'BR'
       },
       {
-        text: 'Guild 9',
+        text: 'BG',
         value: 'BG'
       },
       {
-        text: 'Guild 10',
+        text: 'RG',
         value: 'RG'
-      },
+      },*/
       {
         text: 'Other',
         value: 'Other'
       },
-      {
+/*      {
         text: '0 hit (%)',
         value: '0'
       },
@@ -134,10 +139,10 @@ export default {
       {
         text: '10 hit (%)',
         value: '10'
-      },
+      },*/
       {
         text: 'average hit',
-        value: 'average'
+        value: 'averageHit'
       },
       {
         text: 'max hit',
@@ -166,7 +171,7 @@ export default {
     loopInput: null,
     hitSpreadInput: null,
     possibleHits: 0,
-    goodstuff: [],
+    results: [],
     combination: [],
   }),
   mounted() {
@@ -174,14 +179,13 @@ export default {
   methods: {
     spreadLookup(value) {
       let array = value.split(',').map(Number)
-      this.transpose(array)
-      this.calculateProbability()
+      this.calculateProbability(this.loadData(array))
     },
     exportCSV() {
       let csvContent = "data:text/csv;charset=utf-8,"
       csvContent += [
-        Object.keys(this.goodstuff[0]).join(";"),
-        ...this.goodstuff.map(item => Object.values(item).join(";"))
+        Object.keys(this.results[0]).join(";"),
+        ...this.results.map(item => Object.values(item).join(";"))
       ]
         .join("\n")
         .replace(/(^\[)|(\]$)/gm, "");
@@ -193,41 +197,43 @@ export default {
       link.click()
     },
     clear() {
-      this.goodstuff = []
+      this.results = []
     },
     combinationLoop2(numHit) {
+      //loop through one to x combination of hits
       for (let i=1;i<=numHit;i++) {
         this.combinationLoop(i)
       }
     },
     combinationLoop(numHit) {
+      // loop through x combination of hits
       this.combination = []
       this.findCombinations(numHit)
       let i=0
       for(const item of this.combination) {
-        this.transpose(item)
-        this.calculateProbability()
+        this.calculateProbability(this.loadData([...item,60-numHit]))
+        // this.loadData([...item,60-numHit])
         i++
-        console.log('progress: ' + this.possibleHits + '-' + i)
+        console.log('progress: '+this.combination.length + '-'+ this.possibleHits + '-' + i)
         // if(i>500) break
       }
     },
-    transpose(array) {
-      this.deck.WU = array[0] ? array[0] : 0
-      this.deck.WB = array[1] ? array[1] : 0
-      this.deck.WR = array[2] ? array[2] : 0
-      this.deck.WG = array[3] ? array[3] : 0
-      this.deck.UB = array[4] ? array[4] : 0
-      this.deck.UR = array[5] ? array[5] : 0
-      this.deck.UG = array[6] ? array[6] : 0
-      this.deck.BR = array[7] ? array[7] : 0
-      this.deck.BG = array[8] ? array[8] : 0
-      this.deck.RG = array[9] ? array[9] : 0
+    loadData(array) {
+      this.deck.Other = array.pop() - 1 //remaining cards minus the first niv-mizzet
+      this.deck.WU = (array[0]||0)
+      this.deck.WR = (array[2]||0)
+      this.deck.WB = (array[1]||0)
+      this.deck.WG = (array[3]||0)
+      this.deck.UB = (array[4]||0)
+      this.deck.UR = (array[5]||0)
+      this.deck.UG = (array[6]||0)
+      this.deck.BR = (array[7]||0)
+      this.deck.BG = (array[8]||0)
+      this.deck.RG = (array[9]||0)
 
-      const possibleHits = array.reduce((a,b)=>a+b,0)
-      this.deck.Other = 59-possibleHits
-      this.possibleHits = possibleHits
+      this.possibleHits = array.reduce((a,b)=>a+b,0)
       // this.deck.Total = numHit
+      return this.deck
     },
     // https://www.geeksforgeeks.org/find-all-combinations-that-adds-upto-given-number-2/
     /* Function to find out all
@@ -271,24 +277,24 @@ export default {
         this.findCombinationsRecursion($arr, $index + 1, $num, $reducedNum - $k)
       }
     },
-    calculateProbability() {
-      let temp = {}
+    calculateProbability(deck) {
+      let obj = {}
       let expected_hits = 0
-      for (let number_hits = 0; number_hits < 11; number_hits++) {
-        const hit_prob = this.determine_hit_prob(number_hits)
-        temp[number_hits]=(hit_prob*100).toFixed(4)
+      for (let number_hits = 0; number_hits <= 10; number_hits++) {
+        const hit_prob = this.determine_hit_prob(deck,number_hits)
+        obj[number_hits]=(hit_prob*100).toFixed(2)
         expected_hits += number_hits * hit_prob;
       }
-      temp.average=expected_hits.toFixed(4)
+      obj.averageHit=expected_hits.toFixed(4)
 
       let maxGuild = 0;
-      for (const [key, value] of Object.entries(this.deck)) {
+      for (const [key, value] of Object.entries(deck)) {
         if (key == "Other") continue;
         if (value != 0) maxGuild++;
       }
-      temp.maxHit=maxGuild
-      temp.maxHitChance=(1/this.determine_hit_prob(maxGuild)).toFixed(0)
-      this.goodstuff.push({...this.deck,...temp,possibleHits: this.possibleHits})
+      obj.maxHit=maxGuild
+      obj.maxHitChance=(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
+      this.results.push({...deck,...obj,possibleHits: this.possibleHits,deckSize:this.possibleHits+ deck.Other+1})
     },
     binom(n, k) {
       /*
@@ -307,7 +313,7 @@ export default {
       /*
       Parameters:
         deck - A dictionary of cardname : number of copies
-        needed - Adictionary of cardname : number of copies
+        needed - A dictionary of cardname : number of copies
       It should hold that the cardname keys of deck and needed are identical
       Returns - the multivariate hypergeometric probability of drawing exactly the cards in 'needed' from 'deck' when drawing without replacement
       */
@@ -322,23 +328,23 @@ export default {
       }
       return answer / this.binom(sum_deck, sum_needed);
     },
-    determine_hit_prob(number_hits) {
+    determine_hit_prob(deck, number_hits) {
       /*
       Parameters:
-        number_hits - Should be between 0 or 10. Represents the number of cards put into your hand with Niv.
+      number_hits - Should be between 0 or 10. Represents the number of cards put into your hand with Niv.
       Returns - a number that represents the probability of hitting <number_hits> different guilds in your top 10.
       */
       let hit_prob = 0;
-      for (let WU = 0; WU < this.deck["WU"] + 1; WU++) {
-        for (let WB = 0; WB < this.deck["WB"] + 1; WB++) {
-          for (let WR = 0; WR < this.deck["WR"] + 1; WR++) {
-            for (let WG = 0; WG < this.deck["WG"] + 1; WG++) {
-              for (let UB = 0; UB < this.deck["UB"] + 1; UB++) {
-                for (let UR = 0; UR < this.deck["UR"] + 1; UR++) {
-                  for (let UG = 0; UG < this.deck["UG"] + 1; UG++) {
-                    for (let BR = 0; BR < this.deck["BR"] + 1; BR++) {
-                      for (let BG = 0; BG < this.deck["BG"] + 1; BG++) {
-                        for (let RG = 0; RG < this.deck["RG"] + 1; RG++) {
+      for (let WU = 0; WU < deck["WU"] + 1; WU++) {
+        for (let WB = 0; WB < deck["WB"] + 1; WB++) {
+          for (let WR = 0; WR < deck["WR"] + 1; WR++) {
+            for (let WG = 0; WG < deck["WG"] + 1; WG++) {
+              for (let UB = 0; UB < deck["UB"] + 1; UB++) {
+                for (let UR = 0; UR < deck["UR"] + 1; UR++) {
+                  for (let UG = 0; UG < deck["UG"] + 1; UG++) {
+                    for (let BR = 0; BR < deck["BR"] + 1; BR++) {
+                      for (let BG = 0; BG < deck["BG"] + 1; BG++) {
+                        for (let RG = 0; RG < deck["RG"] + 1; RG++) {
                           const cards_so_far =
                             WU + WB + WR + WG + UB + UR + UG + BR + BG + RG;
                           let hits_so_far =
@@ -370,7 +376,7 @@ export default {
                             needed["RG"] = RG;
                             needed["Other"] = 10 - cards_so_far;
                             hit_prob += this.multivariate_hypgeom(
-                              this.deck,
+                              deck,
                               needed
                             );
                           }
