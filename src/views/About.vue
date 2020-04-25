@@ -7,6 +7,7 @@
       <v-col>
         <v-btn @click="combinationLoop(loopInput)">Loop X</v-btn>
         <v-btn @click="combinationLoop2(loopInput)">Loop 1 to X</v-btn>
+        <div>{{log}}</div>
       </v-col>
     </v-row>
     <v-row>
@@ -25,6 +26,9 @@
         <v-btn @click="clear()">Clear</v-btn>
         <v-btn @click="exportCSV()">Export</v-btn>
       </v-col>
+      <v-col>
+        <bar-chart v-if="chartData" :chart-data="chartData"></bar-chart>
+      </v-col>
     </v-row>
     <div>
     </div>
@@ -39,10 +43,16 @@
 </template>
 
 <script>
+import BarChart from "@/components/BarChart";
 //source: https://github.com/frankkarsten/MTG-Math/blob/master/NivMizzet.py
 
 export default {
+  components: {
+    BarChart
+  },
   data: () => ({
+    chartData: null,
+    log: null,
     headers: [
       {
         text: 'Deck size',
@@ -177,6 +187,19 @@ export default {
   mounted() {
   },
   methods: {
+    setChartData(data) {
+      this.chartData = {
+        labels: [1,2,3,4,5,6,7,8,9,10],
+        datasets: [
+          {
+            label: "Data One",
+            backgroundColor: "#f87979",
+            // data: [5,10,this.getRandomInt()]
+            data: data,
+          }
+        ]
+      }
+    },
     spreadLookup(value) {
       let array = value.split(',').map(Number)
       this.calculateProbability(this.loadData(array))
@@ -201,20 +224,21 @@ export default {
     },
     combinationLoop2(numHit) {
       //loop through one to x combination of hits
+        setTimeout(()=>{
       for (let i=1;i<=numHit;i++) {
-        this.combinationLoop(i)
+          this.combinationLoop(i)
       }
+        },0)
     },
     combinationLoop(numHit) {
       // loop through x combination of hits
       this.combination = []
       this.findCombinations(numHit)
-      let i=0
-      for(const item of this.combination) {
-        this.calculateProbability(this.loadData([...item,60-numHit]))
-        // this.loadData([...item,60-numHit])
-        i++
-        console.log('progress: '+this.combination.length + '-'+ this.possibleHits + '-' + i)
+      for(const [i,item] of this.combination.entries()) {
+        // this.calculateProbability(this.loadData([...item,60-numHit]))
+        setTimeout(this.calculateProbability(this.loadData([...item,60-numHit])),0)
+        console.log('progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1))
+        this.log = 'progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1)
         // if(i>500) break
       }
     },
@@ -295,6 +319,7 @@ export default {
       obj.maxHit=maxGuild
       obj.maxHitChance=(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
       this.results.push({...deck,...obj,possibleHits: this.possibleHits,deckSize:this.possibleHits+ deck.Other+1})
+      this.setChartData(Object.values(obj).slice(0,10))
     },
     binom(n, k) {
       /*
