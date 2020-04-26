@@ -1,32 +1,18 @@
 <script>
-  import { Bar, mixins } from 'vue-chartjs'
+  import { Doughnut, mixins } from 'vue-chartjs'
   const { reactiveProp } = mixins
 
   export default {
-    extends: Bar,
+    extends: Doughnut,
     mixins: [ reactiveProp ],
     props: ['title'],
     data () {
       return {
         options: {
-          scales: {
-            yAxes: [{
-              ticks: {
-                beginAtZero: true
-              },
-              gridLines: {
-                display: true
-              }
-            }],
-            xAxes: [ {
-              gridLines: {
-                display: false
-              }
-            }]
-          },
           legend: {
             display: false
           },
+          rotation:5,
           responsive: true,
           maintainAspectRatio: false,
           title: {
