@@ -20,9 +20,6 @@
     </v-row>
     <v-row>
       <v-col>
-
-      </v-col>
-      <v-col>
         <v-btn @click="clear()">Clear</v-btn>
         <v-btn @click="exportCSV()">Export</v-btn>
       </v-col>
@@ -185,6 +182,7 @@ export default {
     combination: [],
   }),
   mounted() {
+    this.setChartData([0])
   },
   methods: {
     setChartData(data) {
@@ -224,11 +222,9 @@ export default {
     },
     combinationLoop2(numHit) {
       //loop through one to x combination of hits
-        setTimeout(()=>{
       for (let i=1;i<=numHit;i++) {
-          this.combinationLoop(i)
+        this.combinationLoop(i)
       }
-        },0)
     },
     combinationLoop(numHit) {
       // loop through x combination of hits
@@ -236,7 +232,7 @@ export default {
       this.findCombinations(numHit)
       for(const [i,item] of this.combination.entries()) {
         // this.calculateProbability(this.loadData([...item,60-numHit]))
-        setTimeout(this.calculateProbability(this.loadData([...item,60-numHit])),0)
+        this.calculateProbability(this.loadData([...item,60-numHit]))
         console.log('progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1))
         this.log = 'progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1)
         // if(i>500) break
@@ -317,7 +313,7 @@ export default {
         if (value != 0) maxGuild++;
       }
       obj.maxHit=maxGuild
-      obj.maxHitChance=(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
+      obj.maxHitChance="1 in "+(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
       this.results.push({...deck,...obj,possibleHits: this.possibleHits,deckSize:this.possibleHits+ deck.Other+1})
       this.setChartData(Object.values(obj).slice(0,10))
     },

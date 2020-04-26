@@ -8,7 +8,7 @@
         <v-textarea label="list" v-model="input"></v-textarea>
         <v-btn @click.stop="getData">list calc</v-btn>
         <v-btn @click.stop="getDeck">URL calc</v-btn>
-        <v-btn @click.stop="setGuildChartData">Chart</v-btn>
+        <v-btn @click.stop="setchartDataColour([1,2,3,4,5,6])">Chart</v-btn>
       </v-col>
       <!-- <v-col>
         <v-data-table
@@ -43,22 +43,39 @@
         <p>Niv-Mizzet Reborn Hits: {{result.hits}}</p>
       </v-col>
       <v-col>
+        <h2>Number of hits</h2>
+        <p>Deck size: {{result.total}}</p>
+        <p>Niv-Mizzet Reborn Hits: {{result.hits}}</p>
+      </v-col>
+      <v-col>
+        <h2>Card Type</h2>
+        <p>land: {{result.type.land}}</p>
+        <p>creature: {{result.type.creature}}</p>
+        <p>instant: {{result.type.instant}}</p>
+        <p>sorcery: {{result.type.sorcery}}</p>
+        <p>artifact: {{result.type.artifact}}</p>
+        <p>enchantment: {{result.type.enchantment}}</p>
+        <p>planeswalker: {{result.type.planeswalker}}</p>
+      </v-col>
+      <!-- <v-col>
         <h2>Deck Breakdown</h2>
-        <p>Land: {{result.lands}}</p>
-        <p>0 Colour: {{result.colors.c0}}</p>
-        <p>1 Colour: {{result.colors.c1}}</p>
-        <p>2 Colour: {{result.colors.c2}}</p>
-        <p>3 Colour: {{result.colors.c3}}</p>
-        <p>4 Colour: {{result.colors.c4}}</p>
-        <p>5 Colour: {{result.colors.c5}}</p>
+        <p v-for="colour in result.colours" :key="colour.name">{{ colour.name+": "+ colour.value }}</p>
+      </v-col> -->
+      <v-col cols="4">
+        <h2>By Card Type</h2>
+        <bar-chart :chart-data="chartDataCardType"></bar-chart>
+      </v-col>
+      <v-col cols="4">
+        <h2>By Colour</h2>
+        <bar-chart :chart-data="chartDataColour"></bar-chart>
       </v-col>
       <!-- <v-col>
         <h2>Guild Breakdown</h2>
         <p v-for="guild in result.guilds" :key="guild.name">{{ guild.name+": "+ guild.value }}</p>
       </v-col> -->
-      <v-col>
+      <v-col cols="4">
         <h2>By Guild</h2>
-        <bar-chart :chart-data="guildChartData"></bar-chart>
+        <bar-chart :chart-data="chartDataGuild"></bar-chart>
       </v-col>
     </v-row>
     <v-row>
@@ -97,7 +114,9 @@ export default {
   },
   data: () => ({
     const: {
-      guilds: ["WU", "UB", "BR", "RG", "WG", "WB", "BG", "UG", "UR", "WR"]
+      guilds: ["WU", "UB", "BR", "RG", "WG", "WB", "BG", "UG", "UR", "WR"],
+      cardTypes: ["land","creature","artifact","enchantment","planeswalker","instant","sorcery"],
+      numOfColours: ["0","1","2","3","4","5"],
     },
     page: {
       running: false,
@@ -133,29 +152,26 @@ export default {
         value: "data-table-expand"
       }
     ],
-    guildChartData: null
+    chartDataGuild: null,
+    chartDataColour: null,
+    chartDataCardType: null,
   }),
+  watch: {
+    'input': 'getData'
+  },
   mounted() { },
   methods: {
-    setGuildChartData(data) {
-      let arr = Array(10).fill(0)
-      data.forEach(a => {
-        arr[this.const.guilds.indexOf(a.name)] = a.value
-      })
-      this.guildChartData = {
-        labels: this.const.guilds,
+    setchartData(obj, labels, data) {
+      this[obj] = {
+        labels,
         datasets: [
           {
-            label: "Data One",
+            label: "Amount",
             backgroundColor: "#f87979",
-            // data: [5,10,this.getRandomInt()]
-            data: arr,
+            data,
           }
         ]
-      };
-    },
-    getRandomInt() {
-      return Math.floor(Math.random() * (50 - 5 + 1)) + 5;
+      }
     },
     getDeck() {
       //usage: scrape desklist data from website
@@ -208,91 +224,73 @@ export default {
       });
     },
     anaylizeDeck() {
-      this.guild = [];
-      this.guildCount = [];
 
-      let temp = {};
-      this.deck.mb.forEach(a => {
-        //count up the card by colour
-        temp[a.colors] = (temp[a.colors] || 0) + 1 * a.amount;
-      });
-      this.guild = Object.entries(temp).map(e => {
-        return {
-          name: e[0],
-          value: e[1],
-          colour: e[0].length
-        };
-      });
       const obj = {
-        total: this.deck.mb.reduce((a, b) => a + (b.amount || 0), 0),
-        lands: this.deck.mb.reduce(
-          (a, b) => a + (b.type_line.search(/land/gi) > -1 ? b.amount || 0 : 0),
-          0
-        ),
-        colors: {
-          c0: this.deck.mb.reduce(
-            (a, b) =>
-              a +
-              (b.colors.length == 0 && b.type_line.search(/land/gi) == -1
-                ? b.amount || 0
-                : 0),
-            0
-          ),
-          c1: this.deck.mb.reduce(
-            (a, b) => a + (b.colors.length == 1 ? b.amount || 0 : 0),
-            0
-          ),
-          c2: this.deck.mb.reduce(
-            (a, b) => a + (b.colors.length == 2 ? b.amount || 0 : 0),
-            0
-          ),
-          c3: this.deck.mb.reduce(
-            (a, b) => a + (b.colors.length == 3 ? b.amount || 0 : 0),
-            0
-          ),
-          c4: this.deck.mb.reduce(
-            (a, b) => a + (b.colors.length == 4 ? b.amount || 0 : 0),
-            0
-          ),
-          c5: this.deck.mb.reduce(
-            (a, b) => a + (b.colors.length == 5 ? b.amount || 0 : 0),
-            0
-          )
+        total: this.deck.mb.reduce((a,b)=>a+(b.amount||0),0),
+        //set initial value of zero
+        type: {
+          ...this.const.cardTypes.reduce((o,a)=>({...o,[a]:0}),{})
         },
-        guilds: this.guild.filter(a => a.name.length == 2),
-        nonguilds: this.guild.filter(a => a.name.length != 2)
-      };
-      obj.hits = obj.colors.c2;
-      obj.nonhits = obj.total - obj.colors.c2;
+        colour:{
+          ...this.const.numOfColours.reduce((o,a)=>({...o,[a]:0}),{})
+        },
+        guild:{
+          ...this.const.guilds.reduce((o,a)=>({...o,[a]:0}),{})
+        },
+      }
+      //count up cards by card type
+      for(const card of this.deck.mb) {
+        for(const cardType of this.const.cardTypes) {
+          if(~card.type_line.search(RegExp(cardType,"gi"))) {
+            obj.type[cardType] += card.amount
+            break
+          }
+        }
+      }
+      //count up cards by guild
+      for(const card of this.deck.mb) {
+        for(const guild of this.const.guilds) {
+          if(card.colors==guild) {
+            obj.guild[guild] += card.amount
+            break
+          }
+        }
+      }
+      //count up cards by colour
+      for(const card of this.deck.mb) {
+        for(const numOfColour of this.const.numOfColours) {
+          if(
+            card.colors.length==Number(numOfColour) &&
+            !(
+              card.colors.length==0 &&
+              ~card.type_line.search(/land/gi)
+            )
+          ) {
+            obj.colour[numOfColour] += card.amount
+            break
+          }
+        }
+      }
+      obj.hits = obj.colour[2]
+      obj.nonhits = obj.total - obj.colour[2]
 
-      let temp2 = [];
-      this.guild.forEach(v => {
-        if (v.name.length == 2) temp2.push(v.value);
-      });
-      this.guildCount = Array(10)
-        .fill(0)
-        .map((a, i) => {
-          return a + (temp2[i] || 0);
-        });
-      this.guildCount.push(obj.nonhits);
-      this.guildCount = this.guildCount.join(",");
+      this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
+
+      this.setchartData("chartDataCardType",Object.keys(obj.type),Object.values(obj.type))
+      this.setchartData("chartDataGuild",Object.keys(obj.guild),Object.values(obj.guild))
+      this.setchartData("chartDataColour",Object.keys(obj.colour),Object.values(obj.colour))
 
       this.result = { ...obj };
-
-
-
-      this.setGuildChartData(obj.guilds)
-
       this.page.result = true;
     },
     async getCard(name) {
-      const result = await this.$store.dispatch("getCard", name);
+      const result = await this.$store.dispatch("getCard", name)
       if (result.exists()) {
-        return JSON.parse(result.val());
+        return JSON.parse(result.val())
       } else {
         let card = await this.$axios.get(
           "https://api.scryfall.com/cards/named?fuzzy=" + encodeURI(name)
-        );
+        )
         card = card.data;
         const obj = this.createCardObj(card);
         this.$store.dispatch("cacheCard", obj);
@@ -364,7 +362,6 @@ export default {
       for (const [i, card] of this.mb.entries()) {
         total += Number(card.amount);
 
-        // console.log(card.name)
         //find cards
         index = keyCards.findIndex(a => a == this.cardLookup[i].name);
         if (index > -1) {
