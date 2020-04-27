@@ -166,7 +166,7 @@ export default {
               this.deck[card.location].push({ ...data, amount: card.amount });
             })
             .catch(err => {
-              console.log(err);
+              console.log(err)
             })
         );
       }

@@ -41,7 +41,6 @@
 
 <script>
 import BarChart from "@/components/BarChart";
-//source: https://github.com/frankkarsten/MTG-Math/blob/master/NivMizzet.py
 
 export default {
   components: {
@@ -317,6 +316,7 @@ export default {
       this.results.push({...deck,...obj,possibleHits: this.possibleHits,deckSize:this.possibleHits+ deck.Other+1})
       this.setChartData(Object.values(obj).slice(0,10))
     },
+    //source: https://github.com/frankkarsten/MTG-Math/blob/master/NivMizzet.py
     binom(n, k) {
       /*
       Parameters:
@@ -414,5 +414,5 @@ export default {
       return hit_prob;
     }
   }
-};
+}
 </script>
