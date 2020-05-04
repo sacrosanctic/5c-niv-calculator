@@ -24,7 +24,7 @@
         <v-btn @click="exportCSV()">Export</v-btn>
       </v-col>
       <v-col>
-        <bar-chart v-if="chartData" :chart-data="chartData"></bar-chart>
+        <bar-chart :height="200" v-if="chartData" :chart-data="chartData"></bar-chart>
       </v-col>
     </v-row>
     <div>
@@ -40,9 +40,14 @@
 </template>
 
 <script>
-import BarChart from "@/components/BarChart";
+// [8:55 PM, 5/3/2020] R: import calcFunc from '@/path/to/files/calc'
+// [8:56 PM, 5/3/2020] R: Then create a property and assign it calcFunc
+// [8:56 PM, 5/3/2020] R: calcFunc: calcFunc
+import BarChart from "@/components/BarChart"
+import {binom} from "@/components/MyCalculator.js"
 
 export default {
+  // mixins: [binom,simple],
   components: {
     BarChart
   },
@@ -182,6 +187,21 @@ export default {
   }),
   mounted() {
     this.setChartData([0])
+
+    // const obj = {
+    //   n: 10,
+    //   k: 10,
+    // }
+    // console.time("vuex binom")
+    // this.$store.dispatch('binom',obj)
+    // .then(res=>{
+    //   console.timeEnd("vuex binom")
+    //   console.log(res)
+    // })
+    // console.time('binom')
+    // console.log(this.binom(10,10))
+    // console.timeEnd('binom')
+
   },
   methods: {
     setChartData(data) {
@@ -230,11 +250,10 @@ export default {
       this.combination = []
       this.findCombinations(numHit)
       for(const [i,item] of this.combination.entries()) {
+        item
         // this.calculateProbability(this.loadData([...item,60-numHit]))
-        this.calculateProbability(this.loadData([...item,60-numHit]))
         console.log('progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1))
         this.log = 'progress: '+this.combination.length + '-'+ this.possibleHits + '-' + (i+1)
-        // if(i>500) break
       }
     },
     loadData(array) {
@@ -317,19 +336,19 @@ export default {
       this.setChartData(Object.values(obj).slice(0,10))
     },
     //source: https://github.com/frankkarsten/MTG-Math/blob/master/NivMizzet.py
-    binom(n, k) {
-      /*
-      Parameters:
-        n - Number of elements of the entire set
-        k - Number of elements in the subset
-      It should hold that 0 <= k <= n
-      Returns - The binomial coefficient n choose k that represents the number of ways of picking k unordered outcomes from n possibilities
-      */
-      let answer = 1;
-      for (let i = 1; i < Math.min(k, n - k) + 1; i++)
-        answer = (answer * (n + 1 - i)) / i;
-      return parseInt(answer);
-    },
+    // binom(n, k) {
+    //   /*
+    //   Parameters:
+    //     n - Number of elements of the entire set
+    //     k - Number of elements in the subset
+    //   It should hold that 0 <= k <= n
+    //   Returns - The binomial coefficient n choose k that represents the number of ways of picking k unordered outcomes from n possibilities
+    //   */
+    //   let answer = 1;
+    //   for (let i = 1; i < Math.min(k, n - k) + 1; i++)
+    //     answer = (answer * (n + 1 - i)) / i;
+    //   return parseInt(answer);
+    // },
     multivariate_hypgeom(deck, needed) {
       /*
       Parameters:
@@ -343,11 +362,11 @@ export default {
       let sum_needed = 0;
       for (const card in deck) {
         //needs work
-        answer *= this.binom(deck[card], needed[card]);
+        answer *= binom(deck[card], needed[card]);
         sum_deck += deck[card];
         sum_needed += needed[card];
       }
-      return answer / this.binom(sum_deck, sum_needed);
+      return answer / binom(sum_deck, sum_needed);
     },
     determine_hit_prob(deck, number_hits) {
       /*
@@ -367,19 +386,18 @@ export default {
                       for (let BG = 0; BG < deck["BG"] + 1; BG++) {
                         for (let RG = 0; RG < deck["RG"] + 1; RG++) {
                           const cards_so_far =
-                            WU + WB + WR + WG + UB + UR + UG + BR + BG + RG;
+                            WU + WB + WR + WG + UB + UR + UG + BR + BG + RG
                           let hits_so_far =
                             Math.min(WU, 1) +
                             Math.min(WB, 1) +
                             Math.min(WR, 1) +
                             Math.min(WG, 1) +
-                            Math.min(UB, 1);
-                          hits_so_far +=
+                            Math.min(UB, 1) +
                             Math.min(UR, 1) +
                             Math.min(UG, 1) +
                             Math.min(BR, 1) +
                             Math.min(BG, 1) +
-                            Math.min(RG, 1);
+                            Math.min(RG, 1)
                           if (
                             cards_so_far <= 10 &&
                             hits_so_far == number_hits
@@ -395,11 +413,11 @@ export default {
                             needed["BR"] = BR;
                             needed["BG"] = BG;
                             needed["RG"] = RG;
-                            needed["Other"] = 10 - cards_so_far;
+                            needed["Other"] = 10 - cards_so_far
                             hit_prob += this.multivariate_hypgeom(
                               deck,
                               needed
-                            );
+                            )
                           }
                         }
                       }

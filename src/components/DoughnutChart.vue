@@ -10,7 +10,7 @@
       return {
         options: {
           legend: {
-            display: false
+            display: true
           },
           rotation:5,
           responsive: true,

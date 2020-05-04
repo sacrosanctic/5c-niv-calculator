@@ -5,55 +5,30 @@
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
-        <v-textarea label="list" v-model="input"></v-textarea>
+        <v-textarea label="Decklist" v-model="deckList" hint="abc\nhint"></v-textarea>
         <!-- <v-btn @click.stop="getData">list calc</v-btn> -->
         <!-- <v-btn @click.stop="getDeck">URL calc</v-btn>
         <v-btn @click.stop="setchartDataColour([1,2,3,4,5,6])">Chart</v-btn> -->
       </v-col>
-      <!-- <v-col>
-        <v-data-table
-          v-if="page.result"
-          :headers="guildHeader"
-          :items="guild"
-          class="elevation-1"
-          item-key="name"
-          :expanded.sync="expanded"
-          dense
-          disable-pagination
-          hide-default-footer
-          show-expand
-          sort-by="colour"
-        >
-          <template v-slot:top>
-            <v-switch label="expand all"></v-switch>
-          </template>
-          <template v-slot:expanded-item="{ headers, item }">
-            <td
-              :colspan="guildHeader.length"
-              style="white-space:pre"
-            >more stuff here please {{item}}</td>
-          </template>
-        </v-data-table>
-      </v-col> -->
     </v-row>
-    <v-row v-if="page.result">
-      <v-col cols="3">
+    <v-row >
+      <v-col cols="4">
         <!-- <h2>Number of hits</h2>
         <p>Deck size: {{result.total}}</p>
         <p>Niv-Mizzet Reborn Hits: {{result.hits}}</p> -->
-        <doughnut-chart :chart-data="chartDataDoughnut" title="Valid Targets"></doughnut-chart>
+        <doughnut-chart :height="200" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
       </v-col>
-      <v-col cols="3">
-        <!-- <h2>By Card Type</h2> -->
-        <bar-chart :chart-data="chartDataCardType" title="By Card Type"></bar-chart>
+      <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.cardType" title="By Card Type"></bar-chart>
       </v-col>
-      <v-col cols="3">
-        <!-- <h2>By Colour</h2> -->
-        <bar-chart :chart-data="chartDataColour" title="Number of Colour"></bar-chart>
+      <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.colour" title="Spells by Colour"></bar-chart>
       </v-col>
-      <v-col cols="3">
-        <!-- <h2>By Guild</h2> -->
-        <bar-chart :chart-data="chartDataGuild" title="By Guild"></bar-chart>
+      <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.guild" title="By Guild"></bar-chart>
+      </v-col>
+      <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.cmc" title="By CMC"></bar-chart>
       </v-col>
       <v-col>
         <h2>Guild Colour Count</h2>
@@ -87,34 +62,38 @@ export default {
       sb: []
     },
     url: "https://deckbox.org/sets/2641250",
-    input: null,
+    result: null,
+    deckList: null,
     output: null,
     guildCount: null,
-    chartDataGuild: null,
-    chartDataColour: null,
-    chartDataCardType: null,
-    chartDataDoughnut: null,
+    chartData: {
+      guild: {},
+      colour: {},
+      cardType: {},
+      doughnut: {},
+      cmc: {},
+    },
   }),
   watch: {
-    'input': 'getData'
+    'deckList': 'getData'
   },
   mounted() {
   },
   methods: {
     setChartDoughnut(obj, labels, data) {
-      this[obj] = {
+      this.chartData[obj] = {
         labels,
         datasets: [
           {
             data,
             label: "Amount",
-            backgroundColor: ["#66bb6a","#e0e0e0"],
+            backgroundColor: ["#f87979","#fdd1d1","#e0e0e0"],
           }
         ]
       }
     },
     setChartData(obj, labels, data) {
-      this[obj] = {
+      this.chartData[obj] = {
         labels,
         datasets: [
           {
@@ -139,7 +118,7 @@ export default {
       //   this.output = obj
     },
     getData() {
-      let cardList = this.input.split(/\r?\n/);
+      let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
       let promise = [];
       this.page.result = false;
@@ -149,7 +128,7 @@ export default {
       for (let i = 0; i < cardList.length; i++) {
         if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
           location = "sb";
-          continue;
+          continue
         }
 
         //create card object
@@ -180,15 +159,17 @@ export default {
       const obj = {
         total: this.deck.mb.reduce((a,b)=>a+(b.amount||0),0),
         //set initial value of zero
-        type: {
-          ...this.const.cardTypes.reduce((o,a)=>({...o,[a]:0}),{})
-        },
-        colour:{
-          ...this.const.numOfColours.reduce((o,a)=>({...o,[a]:0}),{})
-        },
-        guild:{
-          ...this.const.guilds.reduce((o,a)=>({...o,[a]:0}),{})
-        },
+        type:   this.const.cardTypes.reduce(   (o,a)=>({...o,[a]:0}),{}),
+        colour: this.const.numOfColours.reduce((o,a)=>({...o,[a]:0}),{}),
+        guild:  this.const.guilds.reduce(      (o,a)=>({...o,[a]:0}),{}),
+        cmc:
+          Array(this.deck.mb.reduce((o,a)=>Math.max(a.cmc,o),0)+1).fill(0)
+          .reduce((o,a,i)=>({...o,[i]:0}),{})
+        ,
+      }
+      //count up cards by cmc
+      for(const card of this.deck.mb) {
+        obj.cmc[card.cmc] += card.amount
       }
       //count up cards by card type
       for(const card of this.deck.mb) {
@@ -224,16 +205,17 @@ export default {
         }
       }
       obj.hits = obj.colour[2]
-      obj.nonhits = obj.total - obj.colour[2]
+      obj.nonhits = obj.total - obj.hits
 
       this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
 
-      this.setChartDoughnut("chartDataDoughnut",["hit","non-hit"],[obj.hits,obj.nonhits])
-      this.setChartData("chartDataCardType",Object.keys(obj.type),Object.values(obj.type))
-      this.setChartData("chartDataColour",Object.keys(obj.colour),Object.values(obj.colour))
-      this.setChartData("chartDataGuild",Object.keys(obj.guild),Object.values(obj.guild))
+      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits,obj.nonhits-obj.type.land])
+      this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type))
+      this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour))
+      this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild))
+      this.setChartData("cmc",Object.keys(obj.cmc),Object.values(obj.cmc))
 
-      this.result = { ...obj };
+      this.result = obj;
       this.page.result = true;
     },
     async getCard(name) {
