@@ -5,8 +5,8 @@
         <v-text-field value="amount" v-model="loopInput" outlined></v-text-field>
       </v-col>
       <v-col>
-        <v-btn @click="combinationLoop(loopInput)">Loop X</v-btn>
-        <v-btn @click="combinationLoop2(loopInput)">Loop 1 to X</v-btn>
+        <v-btn @click="combinationLoop(loopInput,loopInput)">Loop X</v-btn>
+        <v-btn @click="combinationLoop(loopInput)">Loop 1 to X</v-btn>
         <div>{{log}}</div>
       </v-col>
     </v-row>
@@ -41,7 +41,7 @@
 
 <script>
 import BarChart from "@/components/BarChart"
-import { binom, multivariate_hypgeom, determine_hit_prob, findCombination } from '@/js/calculation.js'
+import { determine_hit_prob, findCombination } from '@/js/calculation.js'
 
 export default {
   // mixins: [binom,simple],
@@ -188,24 +188,6 @@ export default {
   methods: {
     determine_hit_prob: determine_hit_prob,
     findCombination: findCombination,
-    multivariate_hypgeom: multivariate_hypgeom,
-    binom: binom,
-    setChartData(data) {
-      this.chartData = {
-        labels: [1,2,3,4,5,6,7,8,9,10],
-        datasets: [
-          {
-            label: "Data One",
-            backgroundColor: "#f87979",
-            // data: [5,10,this.getRandomInt()]
-            data: data,
-          }
-        ]
-      }
-    },
-    getResult(data) {
-      this.calculateProbability(...this.formatData(data.split(',').map(Number)))
-    },
     exportCSV() {
       let csvContent = "data:text/csv;charset=utf-8,"
       csvContent += [
@@ -224,27 +206,39 @@ export default {
     clear() {
       this.results = []
     },
-    //loop through one to x combination of hits
-    combinationLoop2(numHit) {
-      for(let i=1;i<=numHit;i++)
-        this.combinationLoop(i)
+    setChartData(data) {
+      this.chartData = {
+        labels: [1,2,3,4,5,6,7,8,9,10],
+        datasets: [
+          {
+            label: "Data One",
+            backgroundColor: "#f87979",
+            // data: [5,10,this.getRandomInt()]
+            data: data,
+          }
+        ]
+      }
     },
-    // loop through x combination of hits
-    combinationLoop(numHit) {
+    getResult(data) {
+      this.calculateProbability(...this.formatData(data.split(',').map(Number)))
+    },
+    // loop through start to end number of hits
+    combinationLoop(end,start=1) {
       let combination = []
-      combination = this.findCombination(numHit)
-      for(const [i,item] of combination.entries()) {
-        item
-        this.calculateProbability(...this.formatData([...item,60-numHit]))
-        console.log('progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1))
-        this.log = 'progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1)
+      for(let j=start;j<=end;j++) {
+        combination = this.findCombination(j)
+        for(const [i,item] of combination.entries()) {
+          this.calculateProbability(...this.formatData([...item,60-j]))
+          console.log('progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1))
+          this.log = 'progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1)
+        }
       }
     },
     formatData(arr) {
       const guilds = ["WU", "WR", "WB", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
       return [
         guilds.reduce(
-          (o,a,i)=>({...o,[a]:arr[i]}),
+          (o,a,i)=>({...o,[a]:arr[i]||0}),
           {Other:arr.pop()-1}
         ),
         arr.reduce((a,b)=>a+b,0)
@@ -252,24 +246,25 @@ export default {
     },
     calculateProbability(deck,possibleHits) {
       let expected_hits = 0
-      let obj = {}
+      let result = {
+      }
 
       for (let number_hits = 0; number_hits <= 10; number_hits++) {
         const hit_prob = this.determine_hit_prob(deck,number_hits)
-        obj[number_hits]=(hit_prob*100).toFixed(2)
+        result[number_hits]=(hit_prob*100).toFixed(2)
         expected_hits += number_hits * hit_prob;
       }
-      obj.averageHit=expected_hits.toFixed(4)
+      result.averageHit=expected_hits.toFixed(4)
 
       let maxGuild = 0;
       for (const [key, value] of Object.entries(deck)) {
         if (key == 'Other') continue;
         if (value != 0) maxGuild++;
       }
-      obj.maxHit=maxGuild
-      obj.maxHitChance="1 in "+(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
-      this.results.push({...deck,...obj,possibleHits:possibleHits,deckSize:possibleHits+ deck.Other+1})
-      this.setChartData(Object.values(obj).slice(0,10))
+      result.maxHit=maxGuild
+      result.maxHitChance="1 in "+(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
+      this.results.push({...deck,...result,possibleHits:possibleHits,deckSize:possibleHits+ deck.Other+1})
+      this.setChartData(Object.values(result).slice(0,10))
     },
   }
 }

@@ -6,7 +6,7 @@ Parameters:
 It should hold that 0 <= k <= n
 Returns - The binomial coefficient n choose k that represents the number of ways of picking k unordered outcomes from n possibilities
 */
-export function binom(n,k) {
+function binom(n,k) {
   let answer=1
   for(let i=1;i<Math.min(k,n-k)+1;i++)
     answer=answer*(n+1-i)/i
@@ -19,7 +19,7 @@ Parameters:
 It should hold that the cardname keys of deck and needed are identical
 Returns - the multivariate hypergeometric probability of drawing exactly the cards in 'needed' from 'deck' when drawing without replacement
 */
-export function multivariate_hypgeom(deck, needed) {
+function multivariate_hypgeom(deck, needed) {
   let answer=1
   let sum_deck=0
   let sum_needed=0
@@ -41,16 +41,16 @@ average 2.68, 1 in 210438
 */
 export function determine_hit_prob(deck, number_hits) {
   let hit_prob = 0;
-  for (let WU = 0; WU < deck["WU"] + 1; WU++) {
-    for (let WB = 0; WB < deck["WB"] + 1; WB++) {
-      for (let WR = 0; WR < deck["WR"] + 1; WR++) {
-        for (let WG = 0; WG < deck["WG"] + 1; WG++) {
-          for (let UB = 0; UB < deck["UB"] + 1; UB++) {
-            for (let UR = 0; UR < deck["UR"] + 1; UR++) {
-              for (let UG = 0; UG < deck["UG"] + 1; UG++) {
-                for (let BR = 0; BR < deck["BR"] + 1; BR++) {
-                  for (let BG = 0; BG < deck["BG"] + 1; BG++) {
-                    for (let RG = 0; RG < deck["RG"] + 1; RG++) {
+  for (let WU=0;WU<=deck["WU"];WU++) {
+  for (let WB=0;WB<=deck["WB"];WB++) {
+  for (let WR=0;WR<=deck["WR"];WR++) {
+  for (let WG=0;WG<=deck["WG"];WG++) {
+  for (let UB=0;UB<=deck["UB"];UB++) {
+  for (let UR=0;UR<=deck["UR"];UR++) {
+  for (let UG=0;UG<=deck["UG"];UG++) {
+  for (let BR=0;BR<=deck["BR"];BR++) {
+  for (let BG=0;BG<=deck["BG"];BG++) {
+  for (let RG=0;RG<=deck["RG"];RG++) {
 
   const cards_so_far=WU+WB+WR+WG+UB+UR+UG+BR+BG+RG
   let hits_so_far =
@@ -101,6 +101,7 @@ that add upto given number. Includes duplicates */
 let permutation = []
 export function findCombination(n) {
   let arr = []
+  permutation = []
   findCombinationsRecursion(arr,0,n,n)
   return permutation
 }
