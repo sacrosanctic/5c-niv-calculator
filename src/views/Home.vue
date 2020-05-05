@@ -1,7 +1,18 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="6">
+      <v-col cols="1">
+        <v-btn raised @click="pickFile">
+          <v-icon>mdi-paperclip</v-icon>
+        </v-btn>
+        <input
+          type="file"
+          ref="uploadText"
+          @change="loadTextFromFile"
+          style="display:none"
+        >
+      </v-col>
+      <v-col cols="5">
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
@@ -62,6 +73,7 @@ export default {
     DoughnutChart,
   },
   data: () => ({
+    file: null,
     const: {
       guilds: ["WU", "UB", "BR", "RG", "WG", "WB", "BG", "UG", "UR", "WR"],
       cardTypes: ["land","creature","artifact","enchantment","planeswalker","instant","sorcery"],
@@ -96,6 +108,28 @@ export default {
   },
   methods: {
     getProbability,
+    pickFile() {
+      this.$refs.uploadText.click()
+    },
+    loadTextFromFile(e) {
+
+      // let file = this.$refs.myFile.files[0]
+      let file = e.target.files[0]
+      // console.log(file)
+      // console.log(file2.target.files[0])
+
+      if(!file || file.type !== 'text/plain') return
+
+      const reader = new FileReader()
+      reader.readAsText(file, "UTF-8")
+      reader.onload = e => {
+        this.deckList = e.target.result
+      }
+      reader.onerror = e => {
+        console.error(e)
+      }
+
+    },
     setChartDoughnut(obj, labels, data) {
       this.chartData[obj] = {
         labels,
