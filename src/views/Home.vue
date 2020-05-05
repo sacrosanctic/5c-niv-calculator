@@ -42,10 +42,10 @@
       <v-col cols="4">
         <bar-chart :height="200" :chart-data="chartData.cmc" title="By CMC"></bar-chart>
       </v-col>
-      <v-col>
+      <!-- <v-col>
         <h2>Guild Colour Count</h2>
         <p>{{guildCount}}</p>
-      </v-col>
+      </v-col> -->
     </v-row>
   </v-container>
 </template>
@@ -134,8 +134,30 @@ export default {
       //   }
       //   this.output = obj
     },
+    async getIP() {
+      const result = await this.$axios.get(
+        "https://api.ipify.org?format=json"
+      )
+      return result
+    },
     getData: _.debounce(function(){
-      // getData() {
+
+      // console.log(window.location.host)
+      // console.log(window.location.hostname)
+      // console.log(this.getIP())
+
+      let log = {
+        date: Date(),
+        ip: this.getIP(),
+        deck: this.deckList,
+
+      }
+      log
+      if(this.deckList) {
+        this.$store.dispatch("logSubmission",log)
+      }
+
+
       let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
       let promise = [];

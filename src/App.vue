@@ -6,10 +6,10 @@
         <span class="font-weight-light">Calculator</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-toolbar-items>
+      <!-- <v-toolbar-items>
       <v-btn class="primary--text" text to="/">Home</v-btn>
       <v-btn class="primary--text" text to="/about">prob</v-btn>
-      </v-toolbar-items>
+      </v-toolbar-items> -->
     </v-app-bar>
 
     <v-content>

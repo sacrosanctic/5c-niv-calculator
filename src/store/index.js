@@ -22,6 +22,10 @@ export default new Vuex.Store({
       return db
         .ref('cards').child(encodeURIComponent(payload).replace(/\./g,'%2E')).once('value')
     }),
+    logSubmission: firebaseAction((context,payload) => {
+      return db
+        .ref('log').push(JSON.stringify(payload))
+    }),
   },
   modules: {
   }

@@ -115,23 +115,23 @@ export function getProbability(deck,deckSize=60) {
   result.stats.nonHits = deckSize-result.stats.possibleHits-1 //the Niv on the stack
   let deck2 = {...deck,other:result.stats.nonHits}
 
-  console.clear()
-  console.log(deckSize+"calculating maxHitChance...")
-  console.time('maxHitChange')
+  // console.clear()
+  // console.log(deckSize+"calculating maxHitChance...")
+  // console.time('maxHitChange')
   result.stats.maxHitChance="1 in "+(1/determine_hit_prob(deck2,result.stats.maxHit)).toFixed(0)
-  console.timeEnd('maxHitChange')
-  console.log(deckSize+"calculating maxHitChance...done")
+  // console.timeEnd('maxHitChange')
+  // console.log(deckSize+"calculating maxHitChance...done")
 
-  console.log(deckSize+"calculating hit probability...")
-  console.time('hitProb')
+  // console.log(deckSize+"calculating hit probability...")
+  // console.time('hitProb')
   for (let number_hits = 0; number_hits <= 10; number_hits++) {
     // console.log(number_hits + " of 10")
     const hit_prob = determine_hit_prob(deck2,number_hits)
     result.numberHits[number_hits]=(hit_prob*100).toFixed(2)
     result.stats.averageHit += number_hits * hit_prob;
   }
-  console.timeEnd('hitProb')
-  console.log(deckSize+"calculating hit probability...done")
+  // console.timeEnd('hitProb')
+  // console.log(deckSize+"calculating hit probability...done")
   result.stats.averageHit=result.stats.averageHit.toFixed(2)
 
   return result
