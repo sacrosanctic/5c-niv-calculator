@@ -5,6 +5,7 @@
         <span>Niv-Mizzet Reborn</span>
         <span class="font-weight-light">Calculator</span>
       </v-toolbar-title>
+        <span class="primary--text ml-5">Private Beta Test</span>
       <v-spacer></v-spacer>
       <!-- <v-toolbar-items>
       <v-btn class="primary--text" text to="/">Home</v-btn>

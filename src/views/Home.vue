@@ -134,37 +134,36 @@ export default {
       //   }
       //   this.output = obj
     },
-    async getIP() {
-      const result = await this.$axios.get(
-        "https://api.ipify.org?format=json"
-      )
-      return result
+    async logSubmission() {
+      const obj = {
+        date: Date(),
+        deck: this.deckList,
+      }
+
+      try {
+        const result = await this.$axios.get(
+          "https://api.ipify.org"
+        )
+        obj.ip = result.data
+      }
+      catch (error) {
+        obj.ip = "blocked"
+      }
+        this.$store.dispatch("logSubmission",obj)
     },
     getData: _.debounce(function(){
 
-      // console.log(window.location.host)
-      // console.log(window.location.hostname)
-      // console.log(this.getIP())
-
-      let log = {
-        date: Date(),
-        ip: this.getIP(),
-        deck: this.deckList,
-
+      if(this.deckList && process.env.NODE_ENV === 'production') {
+        this.logSubmission()
       }
-      log
-      if(this.deckList) {
-        this.$store.dispatch("logSubmission",log)
-      }
-
 
       let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
       let promise = [];
       // this.page.result = false;
       this.page.running = true
-      this.deck.mb = [];
-      this.deck.sb = [];
+      this.deck.mb = []
+      this.deck.sb = []
 
       for (let i = 0; i < cardList.length; i++) {
         if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
