@@ -25,3 +25,6 @@ git commit -m 'deploy'
 git push -f http://github.com/sacrosanctic/5c-niv-calculator.git master:gh-pages
 
 cd -
+
+echo "Press enter to continue..."
+read varname
