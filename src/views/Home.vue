@@ -104,6 +104,7 @@ export default {
             data,
             label: "Amount",
             backgroundColor: ["#f87979","#fdd1d1","#e0e0e0"],
+            // backgroundColor: ["#f87979","#fdd1d1",this.$vuetify.theme.themes.dark.custom1],
           }
         ]
       }
