@@ -2,8 +2,8 @@
   <v-app>
     <v-app-bar app>
       <v-toolbar-title class="headline text-uppercase">
-        <span>Vuetify</span>
-        <span class="font-weight-light">MATERIAL DESIGN</span>
+        <span>Niv-Mizzet Reborn</span>
+        <span class="font-weight-light">Calculator</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items>

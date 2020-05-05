@@ -5,10 +5,19 @@
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
-        <v-textarea label="Decklist" v-model="deckList" hint="abc\nhint"></v-textarea>
+        <v-textarea label="Decklist" v-model="deckList" :loading="page.running"></v-textarea>
         <!-- <v-btn @click.stop="getData">list calc</v-btn> -->
         <!-- <v-btn @click.stop="getDeck">URL calc</v-btn>
         <v-btn @click.stop="setchartDataColour([1,2,3,4,5,6])">Chart</v-btn> -->
+      </v-col>
+      <v-col cols="6" v-if="page.result">
+        <h2>Result</h2>
+        <p>
+          Average hit: {{result.probability.stats.averageHit}}
+          <br/>
+          {{result.probability.stats.maxHitChance}} games of getting
+          {{result.probability.stats.maxHit}} cards
+        </p>
       </v-col>
     </v-row>
     <v-row >
@@ -19,13 +28,16 @@
         <doughnut-chart :height="200" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
       </v-col>
       <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.guild" title="By Guild"></bar-chart>
+      </v-col>
+      <v-col cols="4">
+        <bar-chart :height="200" :chart-data="chartData.probability" title="Hit Probability"></bar-chart>
+      </v-col>
+      <v-col cols="4">
         <bar-chart :height="200" :chart-data="chartData.cardType" title="By Card Type"></bar-chart>
       </v-col>
       <v-col cols="4">
         <bar-chart :height="200" :chart-data="chartData.colour" title="Spells by Colour"></bar-chart>
-      </v-col>
-      <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.guild" title="By Guild"></bar-chart>
       </v-col>
       <v-col cols="4">
         <bar-chart :height="200" :chart-data="chartData.cmc" title="By CMC"></bar-chart>
@@ -39,8 +51,10 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import BarChart from "@/components/BarChart";
 import DoughnutChart from "@/components/DoughnutChart";
+import { getProbability } from "@/js/calculation"
 
 export default {
   components: {
@@ -72,6 +86,7 @@ export default {
       cardType: {},
       doughnut: {},
       cmc: {},
+      probability: {},
     },
   }),
   watch: {
@@ -80,6 +95,7 @@ export default {
   mounted() {
   },
   methods: {
+    getProbability,
     setChartDoughnut(obj, labels, data) {
       this.chartData[obj] = {
         labels,
@@ -117,11 +133,13 @@ export default {
       //   }
       //   this.output = obj
     },
-    getData() {
+    getData: _.debounce(function(){
+      // getData() {
       let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
       let promise = [];
-      this.page.result = false;
+      // this.page.result = false;
+      this.page.running = true
       this.deck.mb = [];
       this.deck.sb = [];
 
@@ -134,7 +152,7 @@ export default {
         //create card object
         const card = {
           name: cardList[i].substr(cardList[i].indexOf(" ") + 1),
-          amount: Number(cardList[i].substr(0, cardList[i].indexOf(" "))),
+          amount: Number([...cardList[i].matchAll(/(\d+)x? /gi)][0][1]||1),
           location: location
         };
 
@@ -153,7 +171,7 @@ export default {
         // this.guildTable();
         this.anaylizeDeck();
       });
-    },
+    },1000),
     anaylizeDeck() {
 
       const obj = {
@@ -166,6 +184,7 @@ export default {
           Array(this.deck.mb.reduce((o,a)=>Math.max(a.cmc,o),0)+1).fill(0)
           .reduce((o,a,i)=>({...o,[i]:0}),{})
         ,
+        probability: {}
       }
       //count up cards by cmc
       for(const card of this.deck.mb) {
@@ -207,16 +226,20 @@ export default {
       obj.hits = obj.colour[2]
       obj.nonhits = obj.total - obj.hits
 
-      this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
+      obj.probability = this.getProbability(obj.guild,obj.total)
+      this.guildCount = obj.probabilty
+      // this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
 
-      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits,obj.nonhits-obj.type.land])
+      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits,obj.type.land])
       this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type))
       this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour))
       this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild))
       this.setChartData("cmc",Object.keys(obj.cmc),Object.values(obj.cmc))
+      this.setChartData("probability",Object.keys(obj.probability.numberHits),Object.values(obj.probability.numberHits))
 
-      this.result = obj;
-      this.page.result = true;
+      this.result = obj
+      this.page.result = true
+      this.page.running = false
     },
     async getCard(name) {
       const result = await this.$store.dispatch("getCard", name)

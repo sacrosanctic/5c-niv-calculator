@@ -101,8 +101,8 @@ export default {
         value: 'RG'
       },*/
       {
-        text: 'Other',
-        value: 'Other'
+        text: 'other',
+        value: 'nonHits'
       },
 /*      {
         text: '0 hit (%)',
@@ -173,7 +173,7 @@ export default {
       BR: 0,
       BG: 1,
       RG: 3,
-      Other: 41,
+      other: 41,
       // Total: 18,
     },
     loopInput: null,
@@ -186,8 +186,8 @@ export default {
   mounted() {
   },
   methods: {
-    determine_hit_prob: determine_hit_prob,
-    findCombination: findCombination,
+    determine_hit_prob,
+    findCombination,
     exportCSV() {
       let csvContent = "data:text/csv;charset=utf-8,"
       csvContent += [
@@ -220,51 +220,56 @@ export default {
       }
     },
     getResult(data) {
-      this.calculateProbability(...this.formatData(data.split(',').map(Number)))
+      let result = this.calculateProbability(this.formatData(data.split(',').map(Number)))
+
+      this.setChartData(Object.values(result.numberHits))
+      this.results.push({...result.stats})
     },
     // loop through start to end number of hits
     combinationLoop(end,start=1) {
       let combination = []
+      let result = null
       for(let j=start;j<=end;j++) {
         combination = this.findCombination(j)
         for(const [i,item] of combination.entries()) {
-          this.calculateProbability(...this.formatData([...item,60-j]))
+          result = this.calculateProbability(this.formatData(item),60)
+          this.results.push({...result.stats})
+
           console.log('progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1))
-          this.log = 'progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1)
+          // this.log = 'progress: '+combination.length + '-'+ this.possibleHits + '-' + (i+1)
         }
       }
     },
     formatData(arr) {
       const guilds = ["WU", "WR", "WB", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
-      return [
-        guilds.reduce(
+      return guilds.reduce(
           (o,a,i)=>({...o,[a]:arr[i]||0}),
-          {Other:arr.pop()-1}
-        ),
-        arr.reduce((a,b)=>a+b,0)
-      ]
+          {}
+        )
     },
-    calculateProbability(deck,possibleHits) {
-      let expected_hits = 0
+    calculateProbability(deck,deckSize=60) {
       let result = {
+        deck: deck,
+        numberHits: {},
+        stats: {
+          deckSize: deckSize,
+          possibleHits: Object.values(deck).reduce((a,b)=>a+b,0),
+          averageHit: 0,
+        },
       }
+      result.stats.nonHits = deckSize-result.stats.possibleHits-1 //the Niv on the stack
+      let deck2 = {...deck,other:result.stats.nonHits}
 
       for (let number_hits = 0; number_hits <= 10; number_hits++) {
-        const hit_prob = this.determine_hit_prob(deck,number_hits)
-        result[number_hits]=(hit_prob*100).toFixed(2)
-        expected_hits += number_hits * hit_prob;
+        const hit_prob = this.determine_hit_prob(deck2,number_hits)
+        result.numberHits[number_hits]=(hit_prob*100).toFixed(2)
+        result.stats.averageHit += number_hits * hit_prob;
       }
-      result.averageHit=expected_hits.toFixed(4)
+      result.stats.averageHit=result.stats.averageHit.toFixed(4)
+      result.stats.maxHit = Object.values(deck).reduce((a,b)=>{return b!=0?a+1:a},0)
+      result.stats.maxHitChance="1 in "+(1/this.determine_hit_prob(deck2,result.stats.maxHit)).toFixed(0)
 
-      let maxGuild = 0;
-      for (const [key, value] of Object.entries(deck)) {
-        if (key == 'Other') continue;
-        if (value != 0) maxGuild++;
-      }
-      result.maxHit=maxGuild
-      result.maxHitChance="1 in "+(1/this.determine_hit_prob(deck,maxGuild)).toFixed(0)
-      this.results.push({...deck,...result,possibleHits:possibleHits,deckSize:possibleHits+ deck.Other+1})
-      this.setChartData(Object.values(result).slice(0,10))
+      return result
     },
   }
 }
