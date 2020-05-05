@@ -252,7 +252,7 @@ export default {
       this.guildCount = obj.probabilty
       // this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
 
-      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits,obj.type.land])
+      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits-obj.type.land,obj.type.land])
       this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type))
       this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour))
       this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild))
