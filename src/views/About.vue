@@ -41,7 +41,7 @@
 
 <script>
 import BarChart from "@/components/BarChart"
-import { determine_hit_prob, findCombination } from '@/js/calculation.js'
+import { binom, multivariate_hypgeom, determine_hit_prob, findCombination } from '@/js/calculation.js'
 
 export default {
   // mixins: [binom,simple],
@@ -181,11 +181,15 @@ export default {
     possibleHits: 0,
     results: [],
     combination: [],
+    test123: null,
   }),
   mounted() {
-    this.setChartData([0])
   },
   methods: {
+    determine_hit_prob: determine_hit_prob,
+    findCombination: findCombination,
+    multivariate_hypgeom: multivariate_hypgeom,
+    binom: binom,
     setChartData(data) {
       this.chartData = {
         labels: [1,2,3,4,5,6,7,8,9,10],
@@ -237,25 +241,11 @@ export default {
       }
     },
     formatData(arr) {
-      // this.deck.Other = arr.pop()-1 //remaining cards minus the first niv-mizzet
-      // this.deck.WU = (arr[0]||0)
-      // this.deck.WR = (arr[2]||0)
-      // this.deck.WB = (arr[1]||0)
-      // this.deck.WG = (arr[3]||0)
-      // this.deck.UB = (arr[4]||0)
-      // this.deck.UR = (arr[5]||0)
-      // this.deck.UG = (arr[6]||0)
-      // this.deck.BR = (arr[7]||0)
-      // this.deck.BG = (arr[8]||0)
-      // this.deck.RG = (arr[9]||0)
-      // console.log(this.deck)
-      // return this.deck
-
       const guilds = ["WU", "WR", "WB", "WG", "UB", "UR", "UG", "BR", "BG", "RG"]
       return [
         guilds.reduce(
           (o,a,i)=>({...o,[a]:arr[i]}),
-          {other:arr.pop()-1}
+          {Other:arr.pop()-1}
         ),
         arr.reduce((a,b)=>a+b,0)
       ]
@@ -281,8 +271,6 @@ export default {
       this.results.push({...deck,...obj,possibleHits:possibleHits,deckSize:possibleHits+ deck.Other+1})
       this.setChartData(Object.values(obj).slice(0,10))
     },
-    determine_hit_prob: determine_hit_prob,
-    findCombination: findCombination,
   }
 }
 </script>

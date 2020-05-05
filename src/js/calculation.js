@@ -6,11 +6,11 @@ Parameters:
 It should hold that 0 <= k <= n
 Returns - The binomial coefficient n choose k that represents the number of ways of picking k unordered outcomes from n possibilities
 */
-function binom(n,k) {
+export function binom(n,k) {
   let answer=1
   for(let i=1;i<Math.min(k,n-k)+1;i++)
-    answer=(answer*(n+1-i))/i;
-  return parseInt(answer);
+    answer=answer*(n+1-i)/i
+  return parseInt(answer)
 }
 /*
 Parameters:
@@ -24,11 +24,11 @@ export function multivariate_hypgeom(deck, needed) {
   let sum_deck=0
   let sum_needed=0
   for(const card in deck) {
-    answer*=binom(deck[card],needed[card]);
-    sum_deck+=deck[card];
-    sum_needed+=needed[card];
+    answer*=binom(deck[card],needed[card])
+    sum_deck+=deck[card]
+    sum_needed+=needed[card]
   }
-  return answer/binom(sum_deck,sum_needed);
+  return answer/binom(sum_deck,sum_needed)
 }
 /*
 Parameters:
