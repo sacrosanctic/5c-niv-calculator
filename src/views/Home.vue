@@ -3,10 +3,11 @@
     <v-row>
       <v-col cols="1">
         <v-btn raised @click="pickFile">
-          <v-icon>mdi-paperclip</v-icon>
+          .txt
         </v-btn>
         <input
           type="file"
+          accept=".txt"
           ref="uploadText"
           @change="loadTextFromFile"
           style="display:none"
@@ -17,9 +18,7 @@
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
         <v-textarea label="Decklist" v-model="deckList" :loading="page.running"></v-textarea>
-        <!-- <v-btn @click.stop="getData">list calc</v-btn> -->
-        <!-- <v-btn @click.stop="getDeck">URL calc</v-btn>
-        <v-btn @click.stop="setchartDataColour([1,2,3,4,5,6])">Chart</v-btn> -->
+        <!-- <v-btn @click.stop="getDeck">URL calc</v-btn> -->
       </v-col>
       <v-col cols="6" v-if="page.result">
         <h2>Result</h2>
@@ -139,7 +138,7 @@ export default {
             label: "Amount",
             backgroundColor: ["#f87979","#fdd1d1","#e0e0e0"],
             // backgroundColor: ["#f87979","#fdd1d1",this.$vuetify.theme.themes.dark.custom1],
-          }
+          },
         ]
       }
     },
@@ -151,8 +150,8 @@ export default {
             data,
             label: "Amount",
             backgroundColor: "#f87979",
-          }
-        ]
+          },
+        ],
       }
     },
     getDeck() {
