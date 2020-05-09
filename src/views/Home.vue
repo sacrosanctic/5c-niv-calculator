@@ -1,61 +1,95 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="1">
-        <v-btn raised @click="pickFile">
-          .txt
-        </v-btn>
-        <input
-          type="file"
-          accept=".txt"
-          ref="uploadText"
-          @change="loadTextFromFile"
-          style="display:none"
-        >
-      </v-col>
-      <v-col cols="5">
+      <v-col cols="6">
+        <v-row>
+          <v-col style="height:147px">
+            <v-tabs height="25" v-model="tab">
+              <v-tab v-for="(item,i) in tabs" :key="i" :disabled="page.running">
+                Deck {{i+1}}
+              </v-tab>
+            </v-tabs>
+            <v-tabs-items v-model="tab">
+              <v-tab-item v-for="(item,i) in tabs" :key="i">
+                <v-textarea
+                  label="Decklist"
+                  v-model="tabs[i]"
+                  :loading="page.running"
+                  rows="3"
+                ></v-textarea>
+              </v-tab-item>
+            </v-tabs-items>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <div>
+              <v-btn
+                :disabled="page.running"
+                color="primary"
+                small
+                raised
+                @click="$refs.uploadInput.click()"
+              >.txt</v-btn>
+              <input
+                type="file"
+                accept=".txt"
+                ref="uploadInput"
+                @change="loadTextFromFile"
+                style="display:none"
+                value=""
+              >
+            </div>
+          </v-col>
+          <v-col>
+            <div class="warning--text" v-if="sbMsg">{{sbMsg}}</div>
+          </v-col>
+        </v-row>
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
-        <v-textarea label="Decklist" v-model="deckList" :loading="page.running"></v-textarea>
         <!-- <v-btn @click.stop="getDeck">URL calc</v-btn> -->
       </v-col>
       <v-col cols="6" v-if="page.result">
         <h2>Result</h2>
-        <p>
-          Average hit: {{result.probability.stats.averageHit}}
+        <h3>Deck 1</h3>
+        <p v-if="results[0]">
+          Average hit: {{results[0].probability.stats.averageHit}}
           <br/>
-          {{result.probability.stats.maxHitChance}} games of getting
-          {{result.probability.stats.maxHit}} cards
+          {{results[0].probability.stats.maxHitChance}} games of getting
+          {{results[0].probability.stats.maxHit}} cards
+        </p>
+        <h3>Deck 2</h3>
+        <p v-if="results[1]">
+          Average hit: {{results[1].probability.stats.averageHit}}
+          <br/>
+          {{results[1].probability.stats.maxHitChance}} games of getting
+          {{results[1].probability.stats.maxHit}} cards
         </p>
       </v-col>
     </v-row>
-    <v-row >
+    <v-row>
       <v-col cols="4">
         <!-- <h2>Number of hits</h2>
         <p>Deck size: {{result.total}}</p>
         <p>Niv-Mizzet Reborn Hits: {{result.hits}}</p> -->
-        <doughnut-chart :height="200" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
+        <doughnut-chart :height="170" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
       </v-col>
       <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.guild" title="By Guild"></bar-chart>
+        <bar-chart :height="170" :chart-data="chartData.guild" title="By Guild"></bar-chart>
       </v-col>
       <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.probability" title="Hit Probability"></bar-chart>
+        <bar-chart :height="170" :chart-data="chartData.probability" title="Hit Probability"></bar-chart>
       </v-col>
       <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.cardType" title="By Card Type"></bar-chart>
+        <bar-chart :height="170" :chart-data="chartData.cardType" title="Spells by Card Type"></bar-chart>
       </v-col>
       <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.colour" title="Spells by Colour"></bar-chart>
+        <bar-chart :height="170" :chart-data="chartData.colour" title="Spells by Colour"></bar-chart>
       </v-col>
       <v-col cols="4">
-        <bar-chart :height="200" :chart-data="chartData.cmc" title="By CMC"></bar-chart>
+        <bar-chart :height="170" :chart-data="chartData.cmc" title="Spells by CMC"></bar-chart>
       </v-col>
-      <!-- <v-col>
-        <h2>Guild Colour Count</h2>
-        <p>{{guildCount}}</p>
-      </v-col> -->
     </v-row>
   </v-container>
 </template>
@@ -72,10 +106,14 @@ export default {
     DoughnutChart,
   },
   data: () => ({
+    sb: false,
+    sbMsg: '',
+    tabs: Array(2),
+    tab: 0,
     file: null,
     const: {
       guilds: ["WU", "UB", "BR", "RG", "WG", "WB", "BG", "UG", "UR", "WR"],
-      cardTypes: ["land","creature","artifact","enchantment","planeswalker","instant","sorcery"],
+      cardTypes: [/*"land",*/"creature","artifact","enchantment","planeswalker","instant","sorcery"],
       numOfColours: ["0","1","2","3","4","5"],
     },
     page: {
@@ -88,9 +126,8 @@ export default {
     },
     url: "https://deckbox.org/sets/2641250",
     result: null,
-    deckList: null,
+    results: Array(2).fill(),
     output: null,
-    guildCount: null,
     chartData: {
       guild: {},
       colour: {},
@@ -101,57 +138,72 @@ export default {
     },
   }),
   watch: {
-    'deckList': 'getData'
+    tabs: 'getData',
+    sbMsg: 'sbWarning'
+  },
+  computed: {
+    theme() {
+      return this.$vuetify.theme.themes[this.$vuetify.theme.isDark ? 'dark' : 'light']
+    }
   },
   mounted() {
   },
   methods: {
     getProbability,
-    pickFile() {
-      this.$refs.uploadText.click()
+    sbWarning() {
+      if(this.sbMsg=='') return
+      setTimeout(()=>{this.sbMsg=''},5000)
+      // this.sb = false
     },
     loadTextFromFile(e) {
-
-      // let file = this.$refs.myFile.files[0]
       let file = e.target.files[0]
-      // console.log(file)
-      // console.log(file2.target.files[0])
 
       if(!file || file.type !== 'text/plain') return
+      this.page.running = true
 
       const reader = new FileReader()
       reader.readAsText(file, "UTF-8")
       reader.onload = e => {
-        this.deckList = e.target.result
+        this.$set(this.tabs,this.tab,e.target.result)
+        this.$refs.uploadInput.value=''
       }
       reader.onerror = e => {
         console.error(e)
       }
-
     },
-    setChartDoughnut(obj, labels, data) {
-      this.chartData[obj] = {
-        labels,
-        datasets: [
+    setChartData(obj, labels, data,data2) {
+      let backgroundColor = null
+      if(obj=='doughnut') {
+        backgroundColor = [
+          this.theme.primary,
+          this.theme.accent,
+          "#e0e0e0"
+        ]
+      } else {
+        backgroundColor = this.theme.primary
+      }
+      let datasets = null
+      if(data2===undefined) {
+        datasets = [{
+          data,
+          backgroundColor,
+        }]
+      }
+      else {
+        datasets = [
           {
             data,
-            label: "Amount",
-            backgroundColor: ["#f87979","#fdd1d1","#e0e0e0"],
-            // backgroundColor: ["#f87979","#fdd1d1",this.$vuetify.theme.themes.dark.custom1],
+            backgroundColor,
+          },
+          {
+            data: data2,
+            backgroundColor,
           },
         ]
       }
-    },
-    setChartData(obj, labels, data) {
       this.chartData[obj] = {
         labels,
-        datasets: [
-          {
-            data,
-            label: "Amount",
-            backgroundColor: "#f87979",
-          },
-        ],
+        datasets
       }
     },
     getDeck() {
@@ -166,6 +218,10 @@ export default {
       //     decklist_url: this.url + "/export"
       //   }
       //   this.output = obj
+    },
+    isLand(str) {
+      return ~str.search(/land/gi)
+
     },
     async logSubmission() {
       const obj = {
@@ -185,6 +241,9 @@ export default {
         this.$store.dispatch("logSubmission",obj)
     },
     getData: _.debounce(function(){
+      let deck = {mb:[],sb:[]}
+      this.page.running = true
+      this.deckList = this.tabs[this.tab]
 
       if(this.deckList && process.env.NODE_ENV === 'production') {
         this.logSubmission()
@@ -193,16 +252,13 @@ export default {
       let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
       let promise = [];
-      // this.page.result = false;
-      this.page.running = true
-      this.deck.mb = []
-      this.deck.sb = []
 
       for (let i = 0; i < cardList.length; i++) {
         if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
           location = "sb";
           continue
         }
+        this.sbMsg = 'Sideboard was ignored.'
 
         //create card object
         const card = {
@@ -215,7 +271,7 @@ export default {
         promise.push(
           this.getCard(card.name)
             .then(data => {
-              this.deck[card.location].push({ ...data, amount: card.amount });
+              deck[card.location].push({ ...data, amount: card.amount });
             })
             .catch(err => {
               console.log(err)
@@ -224,29 +280,32 @@ export default {
       }
       Promise.all(promise).then(() => {
         // this.guildTable();
-        this.anaylizeDeck();
+        this.anaylizeDeck(deck);
       });
     },1000),
-    anaylizeDeck() {
+    anaylizeDeck(deck) {
 
       const obj = {
-        total: this.deck.mb.reduce((a,b)=>a+(b.amount||0),0),
+        total: deck.mb.reduce((a,b)=>a+(b.amount||0),0),
+        land: 0,
         //set initial value of zero
         type:   this.const.cardTypes.reduce(   (o,a)=>({...o,[a]:0}),{}),
         colour: this.const.numOfColours.reduce((o,a)=>({...o,[a]:0}),{}),
         guild:  this.const.guilds.reduce(      (o,a)=>({...o,[a]:0}),{}),
         cmc:
-          Array(this.deck.mb.reduce((o,a)=>Math.max(a.cmc,o),0)+1).fill(0)
-          .reduce((o,a,i)=>({...o,[i]:0}),{})
-        ,
+          Array(deck.mb.reduce((o,a)=>Math.max(a.cmc,o),0)+1).fill(0)
+          .reduce((o,a,i)=>({...o,[i]:0}),{}),
         probability: {}
       }
       //count up cards by cmc
-      for(const card of this.deck.mb) {
-        obj.cmc[card.cmc] += card.amount
+      for(const card of deck.mb) {
+        if(this.isLand(card.type_line))
+          obj.land += card.amount
+        else
+          obj.cmc[card.cmc] += card.amount
       }
       //count up cards by card type
-      for(const card of this.deck.mb) {
+      for(const card of deck.mb) {
         for(const cardType of this.const.cardTypes) {
           if(~card.type_line.search(RegExp(cardType,"gi"))) {
             obj.type[cardType] += card.amount
@@ -255,7 +314,7 @@ export default {
         }
       }
       //count up cards by guild
-      for(const card of this.deck.mb) {
+      for(const card of deck.mb) {
         for(const guild of this.const.guilds) {
           if(card.colors==guild) {
             obj.guild[guild] += card.amount
@@ -264,13 +323,13 @@ export default {
         }
       }
       //count up cards by colour
-      for(const card of this.deck.mb) {
+      for(const card of deck.mb) {
         for(const numOfColour of this.const.numOfColours) {
           if(
             card.colors.length==Number(numOfColour) &&
             !(
               card.colors.length==0 &&
-              ~card.type_line.search(/land/gi)
+              this.isLand(card.type_line)
             )
           ) {
             obj.colour[numOfColour] += card.amount
@@ -280,21 +339,48 @@ export default {
       }
       obj.hits = obj.colour[2]
       obj.nonhits = obj.total - obj.hits
-
       obj.probability = this.getProbability(obj.guild,obj.total)
-      this.guildCount = obj.probabilty
-      // this.guildCount = [...Object.values(obj.guild),obj.nonhits].join(",")
 
-      this.setChartDoughnut("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits-obj.type.land,obj.type.land])
-      this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type))
-      this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour))
-      this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild))
-      this.setChartData("cmc",Object.keys(obj.cmc),Object.values(obj.cmc))
-      this.setChartData("probability",Object.keys(obj.probability.numberHits),Object.values(obj.probability.numberHits))
 
-      this.result = obj
+      this.results[this.tab] = obj
+      this.fillerFunction()
       this.page.result = true
       this.page.running = false
+    },
+    fillerFunction() {
+      let obj = {}
+      let obj2 = {}
+      // console.log(this.results[0])
+      // console.log(null==this.results[1])
+      if(this.results[0]!=null && this.results[1]==null) {
+        obj = this.results[0]
+        // console.log(obj)
+        this.setChartData("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits-obj.land,obj.land])
+        this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type))
+        this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour))
+        this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild))
+        this.setChartData("cmc",Object.keys(obj.cmc),Object.values(obj.cmc))
+        this.setChartData("probability",Object.keys(obj.probability.numberHits),Object.values(obj.probability.numberHits))
+      }
+      else if(this.results[0]==null && this.results[1]!=null) {
+        obj = this.results[1]
+        this.setChartData("doughnut",["hit","non-hit","land"],Array(3).fill(0),[obj.hits,obj.nonhits-obj.land,obj.land])
+        this.setChartData("cardType",Object.keys(obj.type),Array(6).fill(0),Object.values(obj.type))
+        this.setChartData("colour",Object.keys(obj.colour),Array(6).fill(0),Object.values(obj.colour))
+        this.setChartData("guild",Object.keys(obj.guild),Array(10).fill(0),Object.values(obj.guild))
+        this.setChartData("cmc",Object.keys(obj.cmc),Array(6).fill(0),Object.values(obj.cmc))
+        this.setChartData("probability",Object.keys(obj.probability.numberHits),Array(11).fill(0),Object.values(obj.probability.numberHits))
+      }
+      else if(this.results[0]!=null && this.results[1]!=null) {
+        obj = this.results[0]
+        obj2 = this.results[1]
+        this.setChartData("doughnut",["hit","non-hit","land"],[obj.hits,obj.nonhits-obj.land,obj.land],[obj2.hits,obj2.nonhits-obj2.land,obj2.land])
+        this.setChartData("cardType",Object.keys(obj.type),Object.values(obj.type),Object.values(obj2.type))
+        this.setChartData("colour",Object.keys(obj.colour),Object.values(obj.colour),Object.values(obj2.colour))
+        this.setChartData("guild",Object.keys(obj.guild),Object.values(obj.guild),Object.values(obj2.guild))
+        this.setChartData("cmc",Object.keys(obj.cmc),Object.values(obj.cmc),Object.values(obj2.cmc))
+        this.setChartData("probability",Object.keys(obj.probability.numberHits),Object.values(obj.probability.numberHits),Object.values(obj2.probability.numberHits))
+      }
     },
     async getCard(name) {
       const result = await this.$store.dispatch("getCard", name)
