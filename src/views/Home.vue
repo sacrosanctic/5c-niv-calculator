@@ -1,56 +1,52 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="6">
-        <v-row>
-          <v-col style="height:147px">
-            <v-tabs height="25" v-model="tab">
-              <v-tab v-for="(item,i) in tabs" :key="i" :disabled="page.running">
-                Deck {{i+1}}
-              </v-tab>
-            </v-tabs>
-            <v-tabs-items v-model="tab">
-              <v-tab-item v-for="(item,i) in tabs" :key="i">
-                <v-textarea
-                  label="Decklist"
-                  v-model="tabs[i]"
-                  :loading="page.running"
-                  rows="3"
-                ></v-textarea>
-              </v-tab-item>
-            </v-tabs-items>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <div>
-              <v-btn
-                :disabled="page.running"
-                color="primary"
-                small
-                raised
-                @click="$refs.uploadInput.click()"
-              >.txt</v-btn>
-              <input
-                type="file"
-                accept=".txt"
-                ref="uploadInput"
-                @change="loadTextFromFile"
-                style="display:none"
-                value=""
-              >
-            </div>
-          </v-col>
-          <v-col>
-            <div class="warning--text" v-if="sbMsg">{{sbMsg}}</div>
-          </v-col>
-        </v-row>
+      <v-col cols="12" xs="12" sm="6">
+        <input
+          type="file"
+          accept=".txt"
+          ref="uploadInput"
+          @change="loadTextFromFile"
+          style="display:none"
+          value=""
+        >
+        <v-tabs height="25" v-model="tab">
+          <v-tab v-for="(item,i) in tabs" :key="i" :disabled="page.running">
+            Deck {{i+1}}
+          </v-tab>
+        </v-tabs>
+        <v-tabs-items v-model="tab">
+          <v-tab-item v-for="(item,i) in tabs" :key="i">
+          <v-btn
+            :disabled="page.running"
+            color="primary"
+            class="ma-2"
+            small
+            @click="$refs.uploadInput.click()"
+          >.txt</v-btn>
+          <!-- <v-btn small color="primary ma-2">Clipboard</v-btn>
+          <v-btn small color="primary ma-2">Url</v-btn> -->
+            <v-textarea
+              label="Decklist"
+              v-model="tabs[i]"
+              :loading="page.running"
+              rows="3"
+              outlined
+              solo
+              flat
+              dense
+              hide-details="auto"
+            ></v-textarea>
+          </v-tab-item>
+        </v-tabs-items>
+        <div class="warning--text" v-if="sbMsg">{{sbMsg}}</div>
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
         <!-- <v-btn @click.stop="getDeck">URL calc</v-btn> -->
+
       </v-col>
-      <v-col cols="6" v-if="page.result">
+      <v-col cols="12" xs="12" sm="6" v-if="page.result">
         <h2>Result</h2>
         <h3>Deck 1</h3>
         <p v-if="results[0]">
@@ -69,25 +65,22 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="4">
-        <!-- <h2>Number of hits</h2>
-        <p>Deck size: {{result.total}}</p>
-        <p>Niv-Mizzet Reborn Hits: {{result.hits}}</p> -->
+      <v-col xs="12" sm="4">
         <doughnut-chart :height="170" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
       </v-col>
-      <v-col cols="4">
+      <v-col xs="12" sm="4">
         <bar-chart :height="170" :chart-data="chartData.guild" title="By Guild"></bar-chart>
       </v-col>
-      <v-col cols="4">
+      <v-col xs="12" sm="4">
         <bar-chart :height="170" :chart-data="chartData.probability" title="Hit Probability"></bar-chart>
       </v-col>
-      <v-col cols="4">
+      <v-col xs="12" sm="4">
         <bar-chart :height="170" :chart-data="chartData.cardType" title="Spells by Card Type"></bar-chart>
       </v-col>
-      <v-col cols="4">
+      <v-col xs="12" sm="4">
         <bar-chart :height="170" :chart-data="chartData.colour" title="Spells by Colour"></bar-chart>
       </v-col>
-      <v-col cols="4">
+      <v-col xs="12" sm="4">
         <bar-chart :height="170" :chart-data="chartData.cmc" title="Spells by CMC"></bar-chart>
       </v-col>
     </v-row>
@@ -99,6 +92,7 @@ import _ from 'lodash'
 import BarChart from "@/components/BarChart";
 import DoughnutChart from "@/components/DoughnutChart";
 import { getProbability } from "@/js/calculation"
+import colors from 'vuetify/es5/util/colors'
 
 export default {
   components: {
@@ -147,6 +141,8 @@ export default {
     }
   },
   mounted() {
+    console.log(colors.green)
+    console.log(colors.green.base)
   },
   methods: {
     getProbability,
@@ -173,6 +169,7 @@ export default {
     },
     setChartData(obj, labels, data,data2) {
       let backgroundColor = null
+      let backgroundColor2 = null
       if(obj=='doughnut') {
         backgroundColor = [
           this.theme.primary,
@@ -181,6 +178,15 @@ export default {
         ]
       } else {
         backgroundColor = this.theme.primary
+      }
+      if(obj=='doughnut') {
+        backgroundColor2 = [
+          colors.green.base,
+          colors.green.lighten3,
+          "#e0e0e0"
+        ]
+      } else {
+        backgroundColor2 = colors.green.base
       }
       let datasets = null
       if(data2===undefined) {
@@ -197,7 +203,7 @@ export default {
           },
           {
             data: data2,
-            backgroundColor,
+            backgroundColor: backgroundColor2,
           },
         ]
       }
@@ -350,7 +356,8 @@ export default {
     fillerFunction() {
       let obj = {}
       let obj2 = {}
-      // console.log(this.results[0])
+      // console.log(~this.results[0])
+      // console.log(~this.results[1])
       // console.log(null==this.results[1])
       if(this.results[0]!=null && this.results[1]==null) {
         obj = this.results[0]
