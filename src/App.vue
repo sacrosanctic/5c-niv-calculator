@@ -22,7 +22,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'App',
   data: () => ({
@@ -41,8 +40,9 @@ export default {
     setTheme () {
       localStorage.setItem('isDark',JSON.stringify(this.isDark))
       this.$vuetify.theme.isDark = this.isDark
+      this.$da.logEvent('dark mode: ' + this.isDark)
     }
   }
 
-};
+}
 </script>

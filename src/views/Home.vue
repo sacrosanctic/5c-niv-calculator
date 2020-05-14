@@ -165,7 +165,6 @@ export default {
     }
   },
   mounted() {
-    this.$da.logEvent("test event")
   },
   methods: {
     getProbability,
@@ -175,6 +174,7 @@ export default {
       // this.sb = false
     },
     loadTextFromFile(e) {
+      this.$da.logEvent('click .txt button')
       let file = e.target.files[0]
 
       if(!file || file.type !== 'text/plain') return
@@ -278,6 +278,7 @@ export default {
       if(this.deckList && process.env.NODE_ENV === 'production') {
         this.logSubmission()
       }
+      this.$da.logEvent('Deck ' + (this.tab+1) + ': load deck')
 
       let cardList = this.deckList.split(/\r?\n/);
       let location = "mb";
