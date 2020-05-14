@@ -28,4 +28,4 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 
 export const db = firebase.database()
-// export const analytics = firebase.analytics()
+export const da = firebase.analytics()

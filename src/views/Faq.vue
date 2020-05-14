@@ -10,6 +10,11 @@
 
 <script>
 export default {
+  metaInfo() {
+    return {
+      title: 'Faq'
+    }
+  },
   components: {
   },
   data: () => ({

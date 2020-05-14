@@ -98,6 +98,11 @@ import { getProbability } from "@/js/calculation"
 import colors from 'vuetify/es5/util/colors'
 
 export default {
+  metaInfo() {
+    return {
+      title: 'Mainpage'
+    }
+  },
   components: {
     BarChart,
     DoughnutChart,
@@ -160,7 +165,7 @@ export default {
     }
   },
   mounted() {
-    console.log(this.theme.accent)
+    this.$da.logEvent("test event")
   },
   methods: {
     getProbability,
