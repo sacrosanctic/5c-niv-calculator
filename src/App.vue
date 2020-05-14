@@ -12,6 +12,7 @@
       <!-- <v-btn class="primary--text" text to="/about">prob</v-btn> -->
       <v-btn class="primary--text" text to="/faq">FAQ</v-btn>
       </v-toolbar-items>
+      <v-switch hide-details label="dark mode" v-model="isDark"></v-switch>
     </v-app-bar>
 
     <v-content>
@@ -25,7 +26,23 @@
 export default {
   name: 'App',
   data: () => ({
-    //
+    isDark: false
   }),
+  mounted() {
+    let isDark = JSON.parse(localStorage.getItem('isDark'))
+    if(isDark!=null) {
+      this.isDark = isDark
+    }
+  },
+  watch: {
+    isDark: 'setTheme'
+  },
+  methods: {
+    setTheme () {
+      localStorage.setItem('isDark',JSON.stringify(this.isDark))
+      this.$vuetify.theme.isDark = this.isDark
+    }
+  }
+
 };
 </script>

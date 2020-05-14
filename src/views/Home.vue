@@ -65,6 +65,9 @@
       </v-col>
     </v-row>
     <v-row>
+      <!-- <v-col xs="12" sm="4">
+        <bar-chart :height="170" :chart-data="testData" title="By Guild"></bar-chart>
+      </v-col> -->
       <v-col xs="12" sm="4">
         <doughnut-chart :height="170" :chart-data="chartData.doughnut" title="Valid Targets for Niv-Mizzet"></doughnut-chart>
       </v-col>
@@ -130,6 +133,22 @@ export default {
       cmc: {},
       probability: {},
     },
+    testData: {
+      // labels: ['a','b','c'],
+      datasets: [
+        {
+          data: [10,30,20],
+          yAxisID: 'A'
+        },
+        {
+          data: Array(20).fill(3),
+          type: 'line',
+          fill: false,
+          yAxisID: 'B',
+          // xAxisID: 'B'
+        },
+      ]
+    }
   }),
   watch: {
     tabs: 'getData',
@@ -141,8 +160,7 @@ export default {
     }
   },
   mounted() {
-    console.log(colors.green)
-    console.log(colors.green.base)
+    console.log(this.theme.accent)
   },
   methods: {
     getProbability,
@@ -173,8 +191,9 @@ export default {
       if(obj=='doughnut') {
         backgroundColor = [
           this.theme.primary,
-          this.theme.accent,
-          "#e0e0e0"
+          // this.theme.accent,
+          "#82B1FF",
+          "#e0e0e0",
         ]
       } else {
         backgroundColor = this.theme.primary

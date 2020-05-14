@@ -11,18 +11,40 @@
         options: {
           scales: {
             yAxes: [{
+              // id: 'A',
               ticks: {
                 beginAtZero: true
               },
               gridLines: {
                 display: true
               }
-            }],
+            },
+            // {
+            //   display: true,
+            //   id: 'B',
+            //   position: 'right',
+            //   gridLines: {
+            //     display: false
+            //   },
+            //   ticks: {
+            //     min: 0,
+            //     max: 10,
+            //   }
+            // }
+            ],
             xAxes: [ {
+              // id: 'A',
               gridLines: {
                 display: false
               }
-            }]
+            },
+            // {
+            //   id: 'B',
+            //   type: 'linear',
+            //   ticks: {
+            //     label: [1,2,3,10]
+            //   }
+            ]
           },
           legend: {
             display: false

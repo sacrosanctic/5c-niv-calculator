@@ -5,14 +5,14 @@ Vue.use(Vuetify);
 
 // https://vuetifyjs.com/en/customization/theme/
 export default new Vuetify({
-  // theme: {
+  theme: {
   //   options: {
   //     themeCache: {
   //       get: key => localStorage.GetItem(key),
   //       set: (key, value) => localStorage.setItem(key, value),
   //     }
   //   },
-  //   dark: true,
+    isDark: JSON.parse(localStorage.getItem('isDark')),
   //   themes: {
   //     dark: {
   //       primary: '#0081CF',
@@ -26,7 +26,7 @@ export default new Vuetify({
   //       custom1: '#2196F3',
   //     }
   //   }
-  // },
+  },
   icons: {
     iconfont: 'mdi',
   },
