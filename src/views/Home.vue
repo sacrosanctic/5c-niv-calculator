@@ -24,8 +24,8 @@
             small
             @click="$refs.uploadInput.click()"
           >.txt</v-btn>
-          <!-- <v-btn small color="primary ma-2">Clipboard</v-btn>
-          <v-btn small color="primary ma-2">Url</v-btn> -->
+          <!-- <v-btn small color="primary ma-2">Clipboard</v-btn> -->
+          <!-- <v-btn small color="primary ma-2" @click="getDeck">Url</v-btn> -->
             <v-textarea
               label="Decklist"
               v-model="tabs[i]"
@@ -126,7 +126,8 @@ export default {
       mb: [],
       sb: []
     },
-    url: "https://deckbox.org/sets/2641250",
+    // url: "https://deckbox.org/sets/2641250",
+    url: "https://scryfall.com/@LivingEnd/decks/34fa64ef-6a07-46a5-8734-d1010e951a88",
     result: null,
     results: Array(2).fill(),
     output: null,
@@ -165,6 +166,7 @@ export default {
     }
   },
   mounted() {
+    // this.getDeck()
   },
   methods: {
     getProbability,
@@ -236,22 +238,35 @@ export default {
         datasets
       }
     },
-    getDeck() {
-      //usage: scrape desklist data from website
-      //currently none functional
-      //ref https://stackoverflow.com/questions/27745/getting-parts-of-a-url-regex
-      // let regex = this.url.match(/^((http[s]?|ftp):\/)?\/?([^:/\s]+)((\/\w+)*\/)([\w\-.]+[^#?\s]+)(.*)?(#[\w-]+)?$/)
-      //   const obj = {
-      //     url: this.url,
-      //     hostname: regex[3],
-      //     path: regex[4],
-      //     decklist_url: this.url + "/export"
-      //   }
-      //   this.output = obj
+    async getDeck() {
+      // usage: scrape desklist data from website
+      // currently none functional
+      // ref https://stackoverflow.com/questions/27745/getting-parts-of-a-url-regex
+      const regex = this.url.match(/^((http[s]?|ftp):\/)?\/?([^:/\s]+)((\/[\w@]+)*\/)([\w\-.]+[^#?\s]+)(.*)?(#[\w-]+)?$/)
+      const obj = {}
+      obj.url = regex[0]
+      obj.hostname = regex[3]
+      switch (obj.hostname) {
+        case 'scryfall.com':
+          obj.api = 'https://api.scryfall.com/decks/' + regex[6] + '/export/text'
+          break
+        case 'deckbox.org':
+          obj.api = regex[0] + '/export'
+          break
+        case 'tappedout.net':
+          obj.api = regex[0] + '?fmt=txt'
+          break
+        default:
+          obj.api = false
+
+      }
+      console.log(obj.api)
+      if(!obj.api) return
+      const result = await this.$axios.get(obj.url)
+      console.log(result.data)
     },
     isLand(str) {
       return ~str.search(/land/gi)
-
     },
     async logSubmission() {
       const obj = {
@@ -285,7 +300,7 @@ export default {
       let promise = [];
 
       for (let i = 0; i < cardList.length; i++) {
-        if (cardList[i].match(/sideboard[:]*/gi) || cardList[i] === "") {
+        if (cardList[i].match(/sideboard[:]?/gi) || cardList[i] === "") {
           location = "sb";
           continue
         }
