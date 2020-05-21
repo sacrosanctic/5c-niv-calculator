@@ -43,7 +43,6 @@
         <!-- <v-text-field label="url" v-model="url"></v-text-field> -->
         <!-- <v-text-field label="source"></v-text-field>
         <v-text-field label="date"></v-text-field>-->
-        <!-- <v-btn @click.stop="getDeck">URL calc</v-btn> -->
 
       </v-col>
       <v-col cols="12" xs="12" sm="6" v-if="page.result">
@@ -96,6 +95,7 @@ import BarChart from "@/components/BarChart";
 import DoughnutChart from "@/components/DoughnutChart";
 import { getProbability } from "@/js/calculation"
 import colors from 'vuetify/es5/util/colors'
+// import cheerio from 'cheerio'
 
 export default {
   metaInfo() {
@@ -126,8 +126,10 @@ export default {
       mb: [],
       sb: []
     },
-    // url: "https://deckbox.org/sets/2641250",
-    url: "https://scryfall.com/@LivingEnd/decks/34fa64ef-6a07-46a5-8734-d1010e951a88",
+    url: "https://deckbox.org/sets/2638519",
+    // url: "https://scryfall.com/@LivingEnd/decks/34fa64ef-6a07-46a5-8734-d1010e951a88",
+    // url: "http://tappedout.net/mtg-decks/02-10-17-SRE-test/",
+
     result: null,
     results: Array(2).fill(),
     output: null,
@@ -165,8 +167,12 @@ export default {
       return this.$vuetify.theme.themes[this.$vuetify.theme.isDark ? 'dark' : 'light']
     }
   },
-  mounted() {
+  async mounted() {
     // this.getDeck()
+    // const result = await this.$axios.get('https://us-central1-apiproxy1.cloudfunctions.net/app/api4')
+    // console.log(result
+
+    // )
   },
   methods: {
     getProbability,
@@ -258,12 +264,19 @@ export default {
           break
         default:
           obj.api = false
-
       }
       console.log(obj.api)
       if(!obj.api) return
-      const result = await this.$axios.get(obj.url)
+      // const result = await this.$axios.get(obj.url)
+      const result = await this.$axios.get('https://us-central1-apiproxy1.cloudfunctions.net/app/api4',{
+        params: {
+          host: encodeURI(obj.hostname),
+          url: encodeURI(obj.api)
+        }
+      })
       console.log(result.data)
+      this.$set(this.tabs,this.tab,result.data)
+
     },
     isLand(str) {
       return ~str.search(/land/gi)
@@ -319,8 +332,9 @@ export default {
             .then(data => {
               deck[card.location].push({ ...data, amount: card.amount });
             })
-            .catch(err => {
-              console.log(err)
+            .catch(() => {
+              console.error("Cannot find " + card.name)
+              // console.log(err)
             })
         );
       }
