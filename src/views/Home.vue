@@ -90,6 +90,7 @@
 </template>
 
 <script>
+// import * as R from 'ramda'
 import _ from 'lodash'
 import BarChart from "@/components/BarChart";
 import DoughnutChart from "@/components/DoughnutChart";
@@ -126,8 +127,8 @@ export default {
       mb: [],
       sb: []
     },
-    url: "https://deckbox.org/sets/2638519",
-    // url: "https://scryfall.com/@LivingEnd/decks/34fa64ef-6a07-46a5-8734-d1010e951a88",
+    // url: "https://deckbox.org/sets/2638519",
+    url: "https://scryfall.com/@LivingEnd/decks/34fa64ef-6a07-46a5-8734-d1010e951a88",
     // url: "http://tappedout.net/mtg-decks/02-10-17-SRE-test/",
 
     result: null,
@@ -159,7 +160,7 @@ export default {
     }
   }),
   watch: {
-    tabs: 'getData',
+    tabs: 'runApp',
     sbMsg: 'sbWarning'
   },
   computed: {
@@ -171,11 +172,18 @@ export default {
     // this.getDeck()
     // const result = await this.$axios.get('https://us-central1-apiproxy1.cloudfunctions.net/app/api4')
     // console.log(result
-
     // )
   },
   methods: {
     getProbability,
+    runApp() {
+      // const cards = this.getData()
+      // const cards2 = R.map(
+      //   this.getCard()
+      // )(cards)
+      // console.log(cards2)
+      this.getData()
+    },
     sbWarning() {
       if(this.sbMsg=='') return
       setTimeout(()=>{this.sbMsg=''},5000)
@@ -183,7 +191,8 @@ export default {
     },
     loadTextFromFile(e) {
       this.$da.logEvent('click .txt button')
-      let file = e.target.files[0]
+
+      const file = e.target.files[0]
 
       if(!file || file.type !== 'text/plain') return
       this.page.running = true
@@ -249,9 +258,10 @@ export default {
       // currently none functional
       // ref https://stackoverflow.com/questions/27745/getting-parts-of-a-url-regex
       const regex = this.url.match(/^((http[s]?|ftp):\/)?\/?([^:/\s]+)((\/[\w@]+)*\/)([\w\-.]+[^#?\s]+)(.*)?(#[\w-]+)?$/)
-      const obj = {}
-      obj.url = regex[0]
-      obj.hostname = regex[3]
+      const obj = {
+        url: regex[0],
+        hostname: regex[3]
+      }
       switch (obj.hostname) {
         case 'scryfall.com':
           obj.api = 'https://api.scryfall.com/decks/' + regex[6] + '/export/text'
@@ -265,7 +275,6 @@ export default {
         default:
           obj.api = false
       }
-      console.log(obj.api)
       if(!obj.api) return
       // const result = await this.$axios.get(obj.url)
       const result = await this.$axios.get('https://us-central1-apiproxy1.cloudfunctions.net/app/api4',{
@@ -274,7 +283,6 @@ export default {
           url: encodeURI(obj.api)
         }
       })
-      console.log(result.data)
       this.$set(this.tabs,this.tab,result.data)
 
     },
@@ -312,6 +320,24 @@ export default {
       let location = "mb";
       let promise = [];
 
+      // let cardList2 = cardList
+
+      // const hasSb = R.findIndex(R.test(/sideboard[:]?|^$/gi))
+      // const getMb = (list => {
+      //   const index = hasSb(list)
+      //   return index ? R.slice(0,index)(list) : list
+      // })
+      // const strToObj = R.map(item=>{
+      //   const temp = [...item.matchAll(/(?:(\d+)x? )?(.*)/gi)][0]
+      //   return {
+      //     name: temp[2],
+      //     amount: Number(temp[1]),
+      //     location: 'mb'
+      //   }
+      // })
+      // return strToObj(getMb(cardList2))
+      // console.log(strToObj(getMb(cardList2)))
+
       for (let i = 0; i < cardList.length; i++) {
         if (cardList[i].match(/sideboard[:]?/gi) || cardList[i] === "") {
           location = "sb";
@@ -324,7 +350,7 @@ export default {
           name: cardList[i].substr(cardList[i].indexOf(" ") + 1),
           amount: Number([...cardList[i].matchAll(/(\d+)x? /gi)][0][1]||1),
           location: location
-        };
+        }
 
         //get card metadata and push new card object into deck
         promise.push(
@@ -336,14 +362,13 @@ export default {
               console.error("Cannot find " + card.name)
               // console.log(err)
             })
-        );
+        )
       }
       Promise.all(promise).then(() => {
-        // this.guildTable();
-        this.anaylizeDeck(deck);
-      });
+        this.analyzeDeck(deck)
+      })
     },1000),
-    anaylizeDeck(deck) {
+    analyzeDeck(deck) {
 
       const obj = {
         total: deck.mb.reduce((a,b)=>a+(b.amount||0),0),
@@ -444,15 +469,14 @@ export default {
       }
     },
     async getCard(name) {
-      const result = await this.$store.dispatch("getCard", name)
-      if (result.exists()) {
-        return JSON.parse(result.val())
+      const cacheCard = await this.$store.dispatch("getCard", name)
+      if (cacheCard.exists()) {
+        return JSON.parse(cacheCard.val())
       } else {
-        let card = await this.$axios.get(
+        const card = await this.$axios.get(
           "https://api.scryfall.com/cards/named?fuzzy=" + encodeURI(name)
         )
-        card = card.data;
-        const obj = this.createCardObj(card);
+        const obj = this.createCardObj(card.data);
         this.$store.dispatch("cacheCard", obj);
         return obj;
       }
@@ -476,14 +500,14 @@ export default {
           colors: card.card_faces[0].colors.sort(this.colourPieOrder).join(""),
           name: card.card_faces[0].name,
           type_line: card.card_faces[0].type_line
-        };
+        }
       } else {
         return {
           cmc: card.cmc,
           colors: card.colors.sort(this.colourPieOrder).join(""),
           name: card.name,
           type_line: card.type_line
-        };
+        }
       }
     },
     guildTable() {
